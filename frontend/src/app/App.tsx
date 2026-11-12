@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { ToastProvider } from '@/components/Toast/Toast'
 import { Home } from './Home'
 
 const Styleguide = import.meta.env.DEV
@@ -14,14 +15,16 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Suspense fallback={null}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            {Styleguide && <Route path="/_styleguide" element={<Styleguide />} />}
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              {Styleguide && <Route path="/_styleguide" element={<Styleguide />} />}
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }
