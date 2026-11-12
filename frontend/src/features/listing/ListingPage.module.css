@@ -125,6 +125,9 @@
   margin: 0 0 var(--space-1);
   font-weight: 600;
 }
+.badge {
+  margin: var(--space-2) 0 0;
+}
 .sellerName a {
   color: var(--green);
 }

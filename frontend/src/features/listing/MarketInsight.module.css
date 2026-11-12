@@ -1,0 +1,29 @@
+.wrap {
+  display: grid;
+  gap: var(--space-4);
+}
+.title {
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  max-width: 560px;
+}
+.note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+}
+.advised {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

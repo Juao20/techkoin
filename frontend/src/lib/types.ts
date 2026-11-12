@@ -13,6 +13,7 @@ export type Shop = {
   opening_hours: string
   whatsapp_number: string
   is_verified: boolean
+  verification_status: 'none' | 'pending' | 'verified' | 'rejected'
   plan: string
 }
 
@@ -53,6 +54,7 @@ export type ListingCardApi = {
   published_at: string | null
   status: string
   favorited: boolean
+  rejection_reason: string
 }
 
 export type Photo = { id: number; image: string; thumb: string; kind: string; position: number }
@@ -109,9 +111,10 @@ export type ListingDetailApi = ListingCardApi & {
   estimate_mid: number | null
   estimate_high: number | null
   usage_scores: Record<string, number>
+  advised_usage: string | null
+  estimate_indicative: boolean
   views_count: number
   favorites_count: number
-  rejection_reason: string
 }
 
 export type City = { slug: string; name: string }

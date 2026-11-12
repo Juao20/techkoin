@@ -14,6 +14,8 @@ import { ApiError, api } from '@/lib/api'
 import { formatFCFA } from '@/lib/format'
 import { timeAgo, toCard } from '@/lib/listings'
 import type { ListingCardApi, ListingDetailApi } from '@/lib/types'
+import { MarketInsight } from './MarketInsight'
+import { ReportDialog } from './ReportDialog'
 import { buildSpecGroups } from './specs'
 import styles from './ListingPage.module.css'
 
@@ -194,7 +196,13 @@ export default function ListingPage() {
               {l.seller.verified ? ' vérifié(e)' : ''} · membre depuis{' '}
               {new Date(l.seller.member_since).getFullYear()}
             </p>
+            {l.seller.verified && l.seller.type === 'individual' && (
+              <p className={styles.badge}>
+                <Tag tone="green">Identité vérifiée</Tag>
+              </p>
+            )}
           </div>
+          {!sold && <ReportDialog listingId={l.id} />}
         </section>
       </div>
 
@@ -204,6 +212,8 @@ export default function ListingPage() {
           <p className={styles.description}>{l.description}</p>
         </section>
       )}
+
+      <MarketInsight listing={l} />
 
       <section className={styles.block}>
         <h2>Caractéristiques</h2>
