@@ -49,6 +49,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "analytics.middleware.SessionIdMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -124,6 +125,10 @@ REST_FRAMEWORK = {
         "anon": "300/hour",
         "user": "1000/hour",
         "auth": "30/hour",
+        "events": "600/hour",
+        "publish": "60/hour",
+        "upload": "300/hour",
+        "reveal": "60/hour",
     },
 }
 
