@@ -1,10 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// Smallest valid PNG: the server converts and validates every photo.
-const PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-  'base64',
-)
+import { randomImei, randomPng } from './helpers'
 
 async function addPhoto(page: Page, slot: string) {
   const li = page.locator('li', { hasText: slot }).first()
@@ -12,7 +8,7 @@ async function addPhoto(page: Page, slot: string) {
     page.waitForEvent('filechooser'),
     li.getByRole('button', { name: '+ Ajouter' }).click(),
   ])
-  await chooser.setFiles({ name: 'photo.png', mimeType: 'image/png', buffer: PNG })
+  await chooser.setFiles({ name: 'photo.png', mimeType: 'image/png', buffer: randomPng() })
   await expect(li.locator('img')).toHaveCount(1)
 }
 
@@ -57,11 +53,13 @@ test('un particulier publie une annonce complète en moins de 3 minutes', async 
 
   // 5. Prix
   await page.getByLabel('Prix (FCFA)').fill('250000')
+  // L'estimation du marché s'affiche pendant la saisie du prix.
+  await expect(page.getByText(/Prix du marché/)).toBeVisible()
   await page.getByRole('button', { name: 'Continuer' }).click()
 
   // 6. Remise en main
   await page.getByLabel('Ville').selectOption({ label: 'Cotonou' })
-  await page.getByLabel(/IMEI/).fill('356938035643809')
+  await page.getByLabel(/IMEI/).fill(randomImei())
   await page.getByLabel(/compte iCloud ou Google/).check()
   await page.getByRole('button', { name: 'Continuer' }).click()
 
