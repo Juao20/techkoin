@@ -120,11 +120,11 @@ export default function Styleguide() {
             ]}
           />
           <Textarea label="Description" placeholder="État, accessoires, défauts éventuels." />
-          <div>
+          <div className={styles.choices}>
             <Checkbox label="Avec facture" defaultChecked />
             <Checkbox label="Avec garantie" />
           </div>
-          <div>
+          <div className={styles.choices}>
             <Radio name="cond" label="Occasion" defaultChecked />
             <Radio name="cond" label="Reconditionné" />
           </div>
