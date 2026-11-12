@@ -1,0 +1,8 @@
+{
+  "name": "techkoin",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1",
+    "test": "powershell -NoProfile -Command \"& .venv/Scripts/python.exe -m pytest -q; npm --prefix frontend test\""
+  }
+}
