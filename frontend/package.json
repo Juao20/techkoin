@@ -11,7 +11,9 @@
     "format": "prettier --write src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "screenshots": "node scripts/screenshot-styleguide.mjs"
+    "screenshots": "node scripts/screenshot-styleguide.mjs",
+    "e2e": "playwright test",
+    "screenshots:phase1": "node scripts/screenshot-phase1.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

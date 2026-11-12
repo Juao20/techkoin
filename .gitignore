@@ -34,3 +34,5 @@ Thumbs.db
 
 # Local tool state
 .claude/settings.local.json
+frontend/test-results/
+frontend/playwright-report/
