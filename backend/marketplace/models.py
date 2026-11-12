@@ -79,6 +79,7 @@ class Listing(models.Model):
     title = models.CharField(max_length=120, blank=True)
     slug = models.SlugField(max_length=160, unique=True, blank=True)
     description = models.TextField(blank=True)
+    search_text = models.TextField(blank=True, editable=False)
 
     # Commercial
     condition_type = models.CharField(max_length=12, choices=Condition.choices, default="used")
