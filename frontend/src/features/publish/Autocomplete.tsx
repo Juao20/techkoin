@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { Field } from '@/components/Field/Field'
 import fieldStyles from '@/components/Field/Field.module.css'
 import { api } from '@/lib/api'
+import { useDebounced } from '@/lib/useDebounced'
 import styles from './Autocomplete.module.css'
 
 type Props<T> = {
@@ -15,15 +16,6 @@ type Props<T> = {
   onPick: (item: T) => void
   initial?: string
   placeholder?: string
-}
-
-function useDebounced(value: string, ms = 200) {
-  const [v, setV] = useState(value)
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), ms)
-    return () => clearTimeout(t)
-  }, [value, ms])
-  return v
 }
 
 export function Autocomplete<T>({

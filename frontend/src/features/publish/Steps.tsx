@@ -1,15 +1,19 @@
+import { useQuery } from '@tanstack/react-query'
 import { useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/Button/Button'
 import { Checkbox, Radio } from '@/components/Choice/Choice'
 import { Field } from '@/components/Field/Field'
 import fieldStyles from '@/components/Field/Field.module.css'
 import { Input, Textarea } from '@/components/Input/Input'
+import { PriceRange } from '@/components/PriceRange/PriceRange'
 import { Tag } from '@/components/Tag/Tag'
 import { api } from '@/lib/api'
 import { useBrands, useCities } from '@/lib/catalog'
 import { formatFCFA } from '@/lib/format'
 import { CATEGORY_LABELS, CONDITION_LABELS } from '@/lib/listings'
 import type { Category, Photo } from '@/lib/types'
+import { BADGES } from '@/lib/usage'
+import { useDebounced } from '@/lib/useDebounced'
 import { Autocomplete } from './Autocomplete'
 import { isComputer, isMobile, isNew, type Draft } from './draft'
 import { proposeGrade, type GradeAnswers, type Wear } from './grade'
@@ -512,6 +516,64 @@ export function StepPhotos({ draft, photos, listingId, onPhotosChange, errors }:
 
 /* ---------- 5. Prix ---------- */
 
+type EstimateApi =
+  | { available: false }
+  | {
+      available: true
+      low: number
+      mid: number
+      high: number
+      sample_size: number
+      indicative: boolean
+      badge: 'good_deal' | 'fair' | 'above_market' | 'unknown'
+    }
+
+function LiveEstimate({ draft, price }: { draft: Draft; price: number }) {
+  const debouncedPrice = useDebounced(price, 400)
+  const enabled = Boolean(draft.device_model)
+  const body = {
+    device_model: draft.device_model,
+    storage_gb: Number(draft.storage_gb) || null,
+    ram_gb: Number(draft.ram_gb) || null,
+    condition_type: draft.condition_type,
+    grade: isNew(draft) ? '' : draft.grade,
+    battery_health_pct: Number(draft.battery_health_pct) || null,
+    price_fcfa: debouncedPrice || 0,
+  }
+  const { data } = useQuery({
+    queryKey: ['estimate', body],
+    queryFn: () => api<EstimateApi>('pricing/estimate/', { method: 'POST', body }),
+    enabled,
+    staleTime: 60_000,
+  })
+
+  if (!enabled) {
+    return (
+      <p className={styles.hint}>
+        L’estimation est disponible pour les modèles de la liste. Votre annonce sera relue avant
+        publication.
+      </p>
+    )
+  }
+  if (!data || !data.available) return null
+  const badge = data.badge !== 'unknown' ? BADGES[data.badge] : null
+  return (
+    <div className={styles.estimate} role="status">
+      <PriceRange low={data.low} high={data.high} price={price || data.mid} />
+      <p className={styles.hint}>
+        {data.indicative
+          ? 'Estimation indicative : peu d’annonces comparables.'
+          : `Calculée sur ${data.sample_size} annonces et ventes comparables.`}
+      </p>
+      {badge && price > 0 && (
+        <p className={styles.badgeLine}>
+          Votre annonce sera marquée : <Tag tone={badge.tone}>{badge.label}</Tag>
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function StepPrice({ draft, patch, errors }: StepProps) {
   const price = Number(draft.price_fcfa.replace(/\s/g, ''))
   return (
@@ -526,6 +588,7 @@ export function StepPrice({ draft, patch, errors }: StepProps) {
           price > 0 ? formatFCFA(price) : 'Indiquez le prix que vous voulez réellement recevoir.'
         }
       />
+      <LiveEstimate draft={draft} price={price} />
       <Checkbox
         label="Prix négociable"
         checked={draft.negotiable}
