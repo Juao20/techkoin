@@ -1,0 +1,44 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.label {
+  font-size: var(--fs-small);
+  font-weight: 500;
+}
+.values {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+}
+.root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--touch);
+  touch-action: none;
+}
+.track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: var(--line);
+}
+.range {
+  position: absolute;
+  height: 100%;
+  background: var(--green);
+}
+.thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: var(--surface);
+  border: 2px solid var(--green);
+  border-radius: 50%;
+}
