@@ -1,12 +1,16 @@
-"""Publication checks: IMEI status, risk score and the resulting moderation decision."""
+"""Publication checks and moderation decisions."""
 
 from dataclasses import dataclass, field
 
+from django.db import transaction
+
 from . import risk
 from .imei import hash_identifier
-from .models import StolenDeviceReport
+from .models import ModerationDecision, StolenDeviceReport
 
 ACTIVE_STATES = ("active", "pending_review", "reserved")
+DEFAULT_REJECTION = "Cette annonce ne respecte pas les règles de TechKoin."
+DEFAULT_CHANGES = "Merci de compléter ou corriger votre annonce avant de la republier."
 
 
 @dataclass
@@ -48,3 +52,53 @@ def evaluate_publication(listing) -> Outcome:
     priority = stolen or score >= risk.PRIORITY_THRESHOLD
     review = priority or score >= risk.REVIEW_THRESHOLD or "custom_model" in rules
     return Outcome(imei_status=status, score=score, rules=rules, review=review, priority=priority)
+
+
+@transaction.atomic
+def decide(listing, moderator, action: str, reason: str = "") -> ModerationDecision:
+    """Apply a moderator's decision to a listing waiting in the queue and keep a record of it."""
+    from marketplace.models import Listing
+
+    if listing.imei_status == "reported_stolen" and action == ModerationDecision.Action.APPROVE:
+        raise ValueError("Un appareil déclaré volé ne peut pas être approuvé.")
+    flags = dict(listing.moderation_flags or {})
+    if action == ModerationDecision.Action.APPROVE:
+        listing.status = Listing.Status.ACTIVE
+        listing.rejection_reason = ""
+        flags["approved_by_moderator"] = True
+    elif action == ModerationDecision.Action.REJECT:
+        listing.status = Listing.Status.REJECTED
+        listing.rejection_reason = reason or DEFAULT_REJECTION
+    else:
+        listing.status = Listing.Status.DRAFT
+        listing.rejection_reason = reason or DEFAULT_CHANGES
+    flags.pop("priority", None)
+    listing.moderation_flags = flags
+    listing.save(update_fields=["status", "rejection_reason", "moderation_flags", "updated_at"])
+    return ModerationDecision.objects.create(
+        listing=listing, moderator=moderator, action=action, reason=listing.rejection_reason
+    )
+
+
+@transaction.atomic
+def confirm_stolen_report(report: StolenDeviceReport) -> int:
+    """Confirm a report, then pull every live listing with that identifier out of sight."""
+    from marketplace.models import Listing
+
+    report.status = StolenDeviceReport.Status.CONFIRMED
+    report.save(update_fields=["status", "updated_at"])
+    hit = Listing.objects.filter(
+        imei_hash=report.imei_or_serial_hash,
+        status__in=[Listing.Status.ACTIVE, Listing.Status.RESERVED, Listing.Status.PENDING_REVIEW],
+    )
+    count = 0
+    for listing in hit:
+        listing.status = Listing.Status.PENDING_REVIEW
+        listing.imei_status = "reported_stolen"
+        listing.risk_score = 100
+        listing.moderation_flags = {**listing.moderation_flags, "priority": True}
+        listing.save(
+            update_fields=["status", "imei_status", "risk_score", "moderation_flags", "updated_at"]
+        )
+        count += 1
+    return count

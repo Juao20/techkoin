@@ -197,6 +197,97 @@ def test_custom_model_always_waits_for_review(catalog):
     assert listing.moderation_flags["risk_rules"] == {"custom_model": 10}
 
 
+def queued(catalog_ready=True, **extra):
+    listing = make_listing(make_seller(1), description="Appelle le 01 97 55 44 33", **extra)
+    services.publish(listing)
+    listing.refresh_from_db()
+    return listing
+
+
+def make_moderator():
+    return User.objects.create_user(
+        username="mod",
+        email="mod@example.com",
+        password="x-y-z-12345",
+        is_moderator=True,
+        is_staff=True,
+        is_superuser=True,
+    )
+
+
+def test_moderator_decisions_update_the_listing_and_keep_a_record(catalog):
+    from .models import ModerationDecision
+    from .services import decide
+
+    mod = make_moderator()
+    listing = queued(price_fcfa=100_000)
+    listing.status = "pending_review"
+    listing.save()
+    decide(listing, mod, "request_changes", "Retirez le numéro de la description.")
+    listing.refresh_from_db()
+    assert listing.status == "draft"
+    assert listing.rejection_reason == "Retirez le numéro de la description."
+
+    decide(listing, mod, "reject")
+    listing.refresh_from_db()
+    assert listing.status == "rejected" and listing.rejection_reason
+
+    decide(listing, mod, "approve")
+    listing.refresh_from_db()
+    assert listing.status == "active" and listing.rejection_reason == ""
+    assert ModerationDecision.objects.filter(listing=listing).count() == 3
+
+
+def test_a_stolen_device_cannot_be_approved(catalog):
+    from .services import decide
+
+    StolenDeviceReport.objects.create(
+        imei_or_serial_hash=hash_identifier(GOOD_IMEI),
+        description="Volé",
+        status=StolenDeviceReport.Status.CONFIRMED,
+    )
+    listing = make_listing(make_seller(1))
+    services.publish(listing)
+    listing.refresh_from_db()
+    with pytest.raises(ValueError):
+        decide(listing, make_moderator(), "approve")
+
+
+def test_confirming_a_report_pulls_live_listings(catalog):
+    from .services import confirm_stolen_report
+
+    live = make_listing(make_seller(1), status="active")
+    report = StolenDeviceReport.objects.create(
+        imei_or_serial_hash=hash_identifier(GOOD_IMEI), description="Volé"
+    )
+    assert confirm_stolen_report(report) == 1
+    live.refresh_from_db()
+    assert live.status == "pending_review" and live.imei_status == "reported_stolen"
+
+
+def test_admin_queue_is_sorted_by_risk_and_actions_work(catalog, client):
+    mod = make_moderator()
+    client.force_login(mod)
+    low = queued()
+    Listing.objects.filter(pk=low.pk).update(status="pending_review", risk_score=45)
+    high = make_listing(
+        make_seller(2), imei=OTHER_IMEI, description="Paiement avant, 01 97 55 44 33"
+    )
+    services.publish(high)
+    r = client.get("/admin/trust/moderationqueueitem/")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert body.index(f"/{high.pk}/change/") < body.index(f"/{low.pk}/change/")
+    r = client.post(
+        "/admin/trust/moderationqueueitem/",
+        {"action": "approve", "_selected_action": [high.pk]},
+        follow=True,
+    )
+    assert r.status_code == 200
+    high.refresh_from_db()
+    assert high.status == "active"
+
+
 def test_invalid_imei_blocks_publication_with_a_field_error(catalog):
     listing = make_listing(make_seller(1), imei="490154203237519")
     assert "imei_or_serial" in services.validate_for_publish(listing)

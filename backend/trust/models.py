@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from marketplace.models import Listing
+
 
 class StolenDeviceReport(models.Model):
     """A declared stolen device. Only confirmed reports block a publication."""
@@ -25,6 +27,15 @@ class StolenDeviceReport(models.Model):
 
     def __str__(self):
         return f"Appareil déclaré volé #{self.pk} ({self.get_status_display()})"
+
+
+class ModerationQueueItem(Listing):
+    """Listings waiting for a moderator, shown as their own entry in the admin."""
+
+    class Meta:
+        proxy = True
+        verbose_name = "annonce à modérer"
+        verbose_name_plural = "file de modération"
 
 
 class ModerationDecision(models.Model):
