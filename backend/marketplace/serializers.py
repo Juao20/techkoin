@@ -69,6 +69,7 @@ class ListingCardSerializer(serializers.ModelSerializer):
             "published_at",
             "status",
             "favorited",
+            "rejection_reason",
         ]
 
     def get_specs(self, obj):
@@ -148,7 +149,6 @@ class ListingDetailSerializer(ListingCardSerializer):
             "estimate_indicative",
             "views_count",
             "favorites_count",
-            "rejection_reason",
         ]
 
     def get_seller(self, obj):

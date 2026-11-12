@@ -35,9 +35,10 @@ class ShopSerializer(serializers.ModelSerializer):
             "opening_hours",
             "whatsapp_number",
             "is_verified",
+            "verification_status",
             "plan",
         ]
-        read_only_fields = ["slug", "plan", "is_verified"]
+        read_only_fields = ["slug", "plan", "is_verified", "verification_status"]
 
 
 class UserSerializer(serializers.ModelSerializer):
