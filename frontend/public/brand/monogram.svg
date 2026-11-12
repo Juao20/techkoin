@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TechKoin">
+  <polygon points="0,0 402,0 512,110 512,512 0,512" fill="#0B6B45"/>
+  <g fill="#FFFFFF">
+    <rect x="84" y="150" width="164" height="46"/>
+    <rect x="143" y="196" width="46" height="176"/>
+    <rect x="288" y="150" width="46" height="222"/>
+    <polygon points="334,250 412,150 468,150 386,262 468,372 412,372 334,274"/>
+  </g>
+</svg>
