@@ -1,4 +1,4 @@
-export type Category = 'phone' | 'tablet' | 'laptop' | 'desktop'
+export type Category = 'smartphone' | 'tablet' | 'laptop' | 'desktop'
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] }
 
@@ -39,7 +39,7 @@ export type ListingCardApi = {
   brand: string
   price_fcfa: number
   negotiable: boolean
-  price_badge: '' | 'good_deal' | 'fair' | 'above_market' | null
+  price_badge: '' | 'unknown' | 'good_deal' | 'fair' | 'above_market' | null
   condition_type: string
   grade: '' | 'A' | 'B' | 'C'
   city: string

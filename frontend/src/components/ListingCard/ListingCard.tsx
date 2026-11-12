@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { formatFCFA } from '@/lib/format'
 import { GradeMark, type Grade } from '../GradeMark/GradeMark'
 import { Tag } from '../Tag/Tag'
@@ -41,9 +42,9 @@ export function ListingCard({ listing, compared = false, onCompareChange }: Prop
       </div>
       <div className={styles.body}>
         <h3 className={styles.title}>
-          <a href={listing.href} className={styles.link}>
+          <Link to={listing.href} className={styles.link}>
             {listing.title}
-          </a>
+          </Link>
         </h3>
         <p className={styles.specs}>{listing.specs}</p>
         <p className={styles.price}>{formatFCFA(listing.priceFcfa)}</p>
