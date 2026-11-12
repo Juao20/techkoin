@@ -1,5 +1,6 @@
 .card {
   position: relative;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   background: var(--surface);

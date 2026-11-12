@@ -1,4 +1,4 @@
-.page {
+﻿.page {
   max-width: 70ch;
 }
 .page h1 {
@@ -10,6 +10,7 @@
   font-size: var(--fs-h3);
 }
 .page ul {
+  list-style: disc;
   margin: 0;
   padding-left: var(--space-5);
   display: flex;

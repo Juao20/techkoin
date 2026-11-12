@@ -47,7 +47,7 @@ export const EMPTY_DRAFT: Draft = {
   custom_brand: '',
   custom_model_name: '',
   condition_type: 'used',
-  grade: '',
+  grade: 'A', // matches DEFAULT_ANSWERS; the seller adjusts it through the checklist
   answers: DEFAULT_ANSWERS,
   battery_health_pct: '',
   ram_gb: '',
