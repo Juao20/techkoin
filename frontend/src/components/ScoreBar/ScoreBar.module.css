@@ -1,0 +1,28 @@
+.row {
+  display: grid;
+  grid-template-columns: 120px 1fr 48px;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-small);
+}
+.label {
+  color: var(--ink-2);
+}
+.bar {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+}
+.bar span {
+  height: 8px;
+}
+.on {
+  background: var(--green);
+}
+.off {
+  background: var(--line);
+}
+.value {
+  font-family: var(--font-mono);
+  text-align: right;
+}
