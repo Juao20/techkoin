@@ -1,0 +1,30 @@
+.list {
+  display: flex;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.trigger {
+  min-height: var(--touch);
+  padding: 0 var(--space-1);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--ink-2);
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    color var(--transition),
+    border-color var(--transition);
+}
+.trigger:hover {
+  color: var(--ink);
+}
+.trigger[data-state='active'] {
+  color: var(--ink);
+  border-bottom-color: var(--green);
+}
+.content {
+  padding-top: var(--space-4);
+}
