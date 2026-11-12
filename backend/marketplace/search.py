@@ -116,8 +116,10 @@ def apply_filters(qs: QuerySet, params) -> QuerySet:
         qs = qs.filter(warranty_months__gt=0)
     if flag(params, "invoice"):
         qs = qs.filter(has_invoice=True)
-    # `usage` and `secure_payment` are accepted in the URL but only take effect once
-    # usage scores (phase 2) and escrow payments (phase 4) exist.
+    if usage := params.get("usage"):
+        # Advised usage: a score of 7 or more (see pricing/usage.py).
+        qs = qs.filter(**{f"usage_scores__{usage}__gte": 7})
+    # `secure_payment` is accepted in the URL but only takes effect once escrow exists (phase 4).
     return qs
 
 

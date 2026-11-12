@@ -97,6 +97,9 @@ def _finalize(listing: Listing) -> None:
     if not listing.title or listing.moderation_flags.get("auto_title", True):
         listing.title = services.build_title(listing) or listing.title
     listing.has_invoice = "invoice" in (listing.accessories or [])
+    from pricing.services import recompute_listing
+
+    recompute_listing(listing, save=False)
     services.refresh_search_text(listing)
     listing.slug = services.unique_slug(listing)
     listing.save()

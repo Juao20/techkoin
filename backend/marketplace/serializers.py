@@ -97,6 +97,8 @@ class ListingDetailSerializer(ListingCardSerializer):
     gpu = serializers.CharField(source="gpu.name", default=None)
     model_slug = serializers.CharField(source="device_model.slug", default=None)
     has_imei = serializers.SerializerMethodField()
+    advised_usage = serializers.SerializerMethodField()
+    estimate_indicative = serializers.SerializerMethodField()
 
     class Meta(ListingCardSerializer.Meta):
         fields = ListingCardSerializer.Meta.fields + [
@@ -142,6 +144,8 @@ class ListingDetailSerializer(ListingCardSerializer):
             "estimate_mid",
             "estimate_high",
             "usage_scores",
+            "advised_usage",
+            "estimate_indicative",
             "views_count",
             "favorites_count",
             "rejection_reason",
@@ -153,6 +157,14 @@ class ListingDetailSerializer(ListingCardSerializer):
     def get_processor(self, obj):
         p = obj.processor
         return {"name": p.name, "family": p.family, "generation": p.generation} if p else None
+
+    def get_advised_usage(self, obj):
+        from pricing.usage import advised_usage
+
+        return advised_usage(obj.usage_scores)
+
+    def get_estimate_indicative(self, obj):
+        return bool(obj.moderation_flags.get("estimate_indicative", True))
 
     def get_has_imei(self, obj):
         return bool(obj.imei_or_serial)

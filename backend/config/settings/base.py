@@ -129,6 +129,7 @@ REST_FRAMEWORK = {
         "publish": "60/hour",
         "upload": "300/hour",
         "reveal": "60/hour",
+        "estimate": "300/hour",
     },
 }
 
@@ -157,3 +158,21 @@ AI_TIMEOUT_SECONDS = int(os.environ.get("AI_TIMEOUT_SECONDS", "15"))
 
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TechKoin <no-reply@techkoin.bj>")
+
+# Price estimation (section 7.1): coefficients bring comparables to a "grade B used" equivalent.
+PRICING_COEFFS = {
+    "condition": {
+        "new_sealed": 1.30,
+        "new_open": 1.18,
+        "refurbished": 1.10,
+        "A": 1.08,
+        "B": 1.00,
+        "C": 0.85,
+    },
+    "battery_below_80": 0.95,
+    "replaced_parts": 0.92,
+}
+PRICING_MIN_COMPARABLES = 5
+PRICING_SOLD_WINDOW_DAYS = 120
+PRICING_SOLD_WEIGHT = 1.5
+PRICING_ROUND_TO = 5_000
