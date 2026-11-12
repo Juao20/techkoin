@@ -1,0 +1,36 @@
+.wrap {
+  position: relative;
+}
+
+.list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1);
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+}
+
+.option {
+  display: block;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  text-align: left;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+}
+.option:hover,
+.option:focus-visible {
+  background: var(--green-tint);
+}
