@@ -49,12 +49,13 @@ Préfixe : `/api/`. Réponses paginées (24 par page) : `{count, next, previous,
 | POST / DELETE | `listings/{id}/favorite/` | Favori |
 | GET | `me/listings/` · `me/favorites/` | Mes annonces et favoris |
 | GET | `shops/{slug}/` · `shops/{slug}/listings/` | Vitrine publique |
+| POST | `listings/{id}/report/` | Connecté. `{reason, details}` : `scam`, `stolen`, `wrong_info`, `duplicate`, `other`. Un seul signalement par utilisateur ; trois utilisateurs différents remettent l'annonce en modération |
 
 ### Filtres de `GET listings/`
 
 `q`, `category`, `brand` (slugs séparés par des virgules), `price_min`, `price_max`, `condition`, `grade`, `city` (slug ; la ville choisie d'abord, puis les villes proches), `ram_min`, `storage_min`, `storage_type`, `gpu_dedicated`, `keyboard`, `os`, `screen_min`, `screen_max`, `cpu_family`, `cpu_gen_min`, `battery_min`, `5g`, `dual_sim`, `unlocked`, `no_replaced_parts`, `cellular`, `stylus`, `verified`, `seller_type` (`shop` ou `individual`), `warranty`, `invoice`, `sort` (`relevance`, `price_asc`, `price_desc`, `recent`, `best_deal`), `page`.
 
-`usage` et `secure_payment` sont acceptés dans l'URL mais n'ont pas encore d'effet (scores d'usage en phase 2, paiement en phase 4).
+`usage` (`office`, `study`, `dev`, `gaming`, `creative`, `battery` pour les PC ; `everyday`, `photo`, `gaming`, `battery`, `business` pour les mobiles) ne garde que les annonces dont le score d'usage est d'au moins 7. `secure_payment` est accepté dans l'URL mais n'a pas encore d'effet (paiement en phase 4).
 
 ### Règles de publication
 
@@ -62,4 +63,24 @@ Préfixe : `/api/`. Réponses paginées (24 par page) : `{count, next, previous,
 - Smartphone et tablette : `account_removed` doit être vrai.
 - Particulier : 5 annonces actives au maximum.
 - Modèle hors catalogue : l'annonce passe en `pending_review`.
+- IMEI : 15 chiffres avec clé de Luhn pour un smartphone ; numéro de série au format de la marque accepté pour les tablettes et les ordinateurs.
+- À la publication, le moteur de risque calcule `risk_score` : moins de 40, l'annonce est `active` ; de 40 à 69, `pending_review` ; 70 ou plus, ou appareil déclaré volé, `pending_review` prioritaire. Les règles déclenchées sont dans `moderation_flags.risk_rules`.
 - L'IMEI ou le numéro de série est chiffré en base et n'est jamais renvoyé par l'API.
+## Prix et usages
+
+| Méthode | Route | Description |
+|---|---|---|
+| POST | `pricing/estimate/` | `{device_model, storage_gb, ram_gb, condition_type, grade, battery_health_pct, price_fcfa}`. Renvoie `{available, low, mid, high, sample_size, indicative, badge}`, utilisé pendant la publication |
+
+La fiche annonce renvoie `estimate_low` / `estimate_mid` / `estimate_high`, `estimate_indicative`, `price_badge`, `usage_scores` et `advised_usage`. Le badge n'existe que si l'estimation n'est pas indicative. Commande nocturne : `manage.py recompute_estimates`.
+
+## Confiance
+
+| Méthode | Route | Description |
+|---|---|---|
+| POST | `stolen-reports/` | Public. `{imei_or_serial, description, police_reference?}`. Seule une empreinte est conservée ; la déclaration doit être confirmée par un modérateur |
+| POST | `me/identity/` | Connecté. Multipart `document` + `selfie` (image ou PDF, 8 Mo). Passe l'identité en `pending` |
+| POST | `shop/verification/` | Compte boutique. Multipart `ifu`, `rccm`, `address`, `document` |
+| GET | `private-files/{kind}/{id}/` | Modérateurs uniquement ; `kind` vaut `identity`, `selfie` ou `shop-document` |
+
+La modération se fait dans le Django admin (`/admin/`) : « file de modération » triée par risque, approbation, refus, demande de modifications ; vérifications d'identité et de boutique ; déclarations d'appareils volés ; signalements. Commande quotidienne : `manage.py purge_verification_documents` (supprime les documents 90 jours après la décision).

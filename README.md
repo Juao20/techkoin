@@ -57,6 +57,17 @@ Mot de passe de tous les comptes : `Demo2026!`
 | Boutique gratuite | boutique.gratuite@demo.techkoin.test |
 | Particulier | particulier@demo.techkoin.test |
 
+## Moderation et taches planifiees
+
+La moderation se fait dans l'admin Django (http://localhost:8000/admin/, compte `admin`) : « File de moderation » (annonces triees par score de risque, approbation, refus, demande de modifications), verifications d'identite et de boutique (utilisateurs et boutiques), declarations d'appareils voles, signalements.
+
+A planifier en production :
+
+```powershell
+.\.venv\Scripts\python.exe backend\manage.py recompute_estimates            # chaque nuit : estimations, badges, scores d'usage
+.\.venv\Scripts\python.exe backend\manage.py purge_verification_documents   # chaque jour : documents supprimes 90 jours apres la decision
+```
+
 ## Tests de bout en bout
 
 Serveurs lances et donnees de demo chargees : `npm --prefix frontend run e2e` (mobile 360 px et bureau 1280 px). Captures de la phase 1 : `npm --prefix frontend run screenshots:phase1`, resultat dans `docs/screenshots/phase1/`.
