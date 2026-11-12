@@ -19,6 +19,10 @@ const ListingPage = lazy(() => import('../features/listing/ListingPage'))
 
 const PublishPage = lazy(() => import('../features/publish/PublishPage'))
 
+const ShopPage = lazy(() => import('../features/shop/ShopPage'))
+const AccountPage = lazy(() => import('../features/account/AccountPage'))
+const SafetyPage = lazy(() => import('../features/pages/SafetyPage'))
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
@@ -38,6 +42,9 @@ export function App() {
                   <Route path="/annonce/:slug" element={<ListingPage />} />
                   <Route path="/vendre" element={<PublishPage />} />
                   <Route path="/vendre/:id" element={<PublishPage />} />
+                  <Route path="/boutique/:slug" element={<ShopPage />} />
+                  <Route path="/compte" element={<AccountPage />} />
+                  <Route path="/securite" element={<SafetyPage />} />
                   <Route path="/connexion" element={<LoginPage />} />
                   <Route path="/inscription" element={<RegisterPage />} />
                 </Route>
