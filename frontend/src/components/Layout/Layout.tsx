@@ -70,6 +70,7 @@ export function Layout() {
           <p>TechKoin · Appareils neufs et d'occasion au Bénin.</p>
           <nav aria-label="Pied de page" className={styles.footerNav}>
             <Link to="/securite">Conseils de sécurité</Link>
+            <Link to="/appareil-vole">Déclarer un appareil volé</Link>
             <Link to="/recherche">Toutes les annonces</Link>
           </nav>
         </div>

@@ -23,6 +23,8 @@ const ShopPage = lazy(() => import('../features/shop/ShopPage'))
 const AccountPage = lazy(() => import('../features/account/AccountPage'))
 const SafetyPage = lazy(() => import('../features/pages/SafetyPage'))
 
+const StolenReportPage = lazy(() => import('../features/trust/StolenReportPage'))
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
@@ -45,6 +47,7 @@ export function App() {
                   <Route path="/boutique/:slug" element={<ShopPage />} />
                   <Route path="/compte" element={<AccountPage />} />
                   <Route path="/securite" element={<SafetyPage />} />
+                  <Route path="/appareil-vole" element={<StolenReportPage />} />
                   <Route path="/connexion" element={<LoginPage />} />
                   <Route path="/inscription" element={<RegisterPage />} />
                 </Route>
