@@ -130,6 +130,7 @@ REST_FRAMEWORK = {
         "upload": "300/hour",
         "reveal": "60/hour",
         "estimate": "300/hour",
+        "report": "30/hour",
     },
 }
 

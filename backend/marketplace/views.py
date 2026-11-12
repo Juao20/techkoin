@@ -15,7 +15,7 @@ from analytics.models import Event
 from analytics.tracking import track
 
 from . import services
-from .models import Favorite, Listing, ListingPhoto
+from .models import Favorite, Listing, ListingPhoto, ListingReport
 from .photos import InvalidPhoto, process_upload
 from .search import PAGE_SIZE, search_listings
 from .serializers import (
@@ -298,6 +298,30 @@ class FavoriteToggle(APIView):
                 favorites_count=F("favorites_count") - 1
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ReportListing(APIView):
+    """Flag a listing. Three different reporters pull it back into the moderation queue."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "report"
+
+    def post(self, request, pk):
+        listing = get_object_or_404(
+            Listing, pk=pk, status__in=[Listing.Status.ACTIVE, Listing.Status.RESERVED]
+        )
+        reason = request.data.get("reason", "")
+        if reason not in ListingReport.Reason.values:
+            return error("invalid_reason", "Choisissez le motif du signalement.")
+        if listing.seller_id == request.user.id:
+            return error("own_listing", "Vous ne pouvez pas signaler votre propre annonce.")
+        details = str(request.data.get("details", ""))[:1000]
+        _, created = ListingReport.objects.get_or_create(
+            listing=listing, reporter=request.user, defaults={"reason": reason, "details": details}
+        )
+        if created:
+            services.escalate_if_reported(listing)
+        return Response({"reported": True}, status=status.HTTP_201_CREATED if created else 200)
 
 
 class Similar(APIView):

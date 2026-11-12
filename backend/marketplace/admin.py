@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Favorite, Listing, ListingPhoto
+from .models import Favorite, Listing, ListingPhoto, ListingReport
 
 
 class PhotoInline(admin.TabularInline):
@@ -16,6 +16,21 @@ class ListingAdmin(admin.ModelAdmin):
     search_fields = ("title", "slug", "seller__email")
     exclude = ("imei_or_serial",)  # never shown in clear in the admin
     inlines = [PhotoInline]
+
+
+@admin.register(ListingReport)
+class ListingReportAdmin(admin.ModelAdmin):
+    list_display = ("listing", "reason", "reporter", "status", "created_at")
+    list_filter = ("status", "reason")
+    actions = ["mark_handled", "mark_dismissed"]
+
+    @admin.action(description="Marquer comme traités")
+    def mark_handled(self, request, queryset):
+        queryset.update(status=ListingReport.Status.HANDLED)
+
+    @admin.action(description="Classer sans suite")
+    def mark_dismissed(self, request, queryset):
+        queryset.update(status=ListingReport.Status.DISMISSED)
 
 
 admin.site.register(Favorite)

@@ -13,6 +13,7 @@ urlpatterns = [
     path("listings/<int:pk>/reveal-phone/", views.RevealPhone.as_view()),
     path("listings/<int:pk>/whatsapp/", views.WhatsAppLink.as_view()),
     path("listings/<int:pk>/favorite/", views.FavoriteToggle.as_view()),
+    path("listings/<int:pk>/report/", views.ReportListing.as_view()),
     path("listings/<slug:slug>/similar/", views.Similar.as_view()),
     path("listings/<slug:slug>/", views.ListingBySlug.as_view()),
     path("me/listings/", views.MyListings.as_view()),

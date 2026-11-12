@@ -217,3 +217,38 @@ class Favorite(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["user", "listing"], name="unique_favorite")]
+
+
+class ListingReport(models.Model):
+    """A buyer flags a listing (scam, stolen device, wrong information...)."""
+
+    class Reason(models.TextChoices):
+        SCAM = "scam", "Arnaque"
+        STOLEN = "stolen", "Appareil volé"
+        WRONG_INFO = "wrong_info", "Informations fausses"
+        DUPLICATE = "duplicate", "Annonce en double"
+        OTHER = "other", "Autre"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "À traiter"
+        HANDLED = "handled", "Traité"
+        DISMISSED = "dismissed", "Sans suite"
+
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="reports")
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
+    )
+    reason = models.CharField(max_length=12, choices=Reason.choices)
+    details = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["listing", "reporter"], name="one_report_per_user")
+        ]
+
+    def __str__(self):
+        return f"Signalement {self.get_reason_display()} sur {self.listing_id}"

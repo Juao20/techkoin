@@ -129,6 +129,25 @@ def validate_for_publish(listing: Listing) -> dict[str, str]:
     return errors
 
 
+REPORTS_FOR_REVIEW = 3
+
+
+def escalate_if_reported(listing: Listing) -> bool:
+    """A live listing reported by enough different users goes back to the moderation queue."""
+    from .models import ListingReport
+
+    reporters = ListingReport.objects.filter(listing=listing).values("reporter").distinct().count()
+    if reporters < REPORTS_FOR_REVIEW or listing.status not in (
+        Listing.Status.ACTIVE,
+        Listing.Status.RESERVED,
+    ):
+        return False
+    listing.status = Listing.Status.PENDING_REVIEW
+    listing.moderation_flags = {**listing.moderation_flags, "reported": reporters}
+    listing.save(update_fields=["status", "moderation_flags", "updated_at"])
+    return True
+
+
 def active_count(user) -> int:
     return Listing.objects.filter(seller=user, status__in=LIVE_STATUSES).count()
 
