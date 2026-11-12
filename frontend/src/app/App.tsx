@@ -15,6 +15,8 @@ const RegisterPage = lazy(() => import('../features/auth/RegisterPage'))
 
 const SearchPage = lazy(() => import('../features/search/SearchPage'))
 
+const ListingPage = lazy(() => import('../features/listing/ListingPage'))
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
@@ -31,6 +33,7 @@ export function App() {
                 <Route element={<Layout />}>
                   <Route path="/" element={<Home />} />
                   <Route path="/recherche" element={<SearchPage />} />
+                  <Route path="/annonce/:slug" element={<ListingPage />} />
                   <Route path="/connexion" element={<LoginPage />} />
                   <Route path="/inscription" element={<RegisterPage />} />
                 </Route>
