@@ -40,4 +40,23 @@ Captures du styleguide (serveur Vite lance) : `npm --prefix frontend run screens
 
 ## Comptes de demo
 
-Les comptes de demo (`admin`, `moderateur`, `boutique.pro`, `boutique.gratuite`, `particulier`) arrivent avec la commande `seed_demo` (phase 1).
+```powershell
+.\.venv\Scripts\python.exe backend\manage.py seed_catalog
+.\.venv\Scripts\python.exe backend\manage.py seed_demo            # ajouter --reset pour recreer
+```
+
+`seed_demo` cree 8 boutiques, 25 particuliers, 150 annonces avec photos generees (images neutres, pas de photos reelles) et 90 jours d'evenements. Les commandes de commande sandbox arriveront avec la phase 4.
+
+Mot de passe de tous les comptes : `Demo2026!`
+
+| Compte | E-mail |
+|---|---|
+| Administrateur | admin@demo.techkoin.test |
+| Moderateur | moderateur@demo.techkoin.test |
+| Boutique Pro | boutique.pro@demo.techkoin.test |
+| Boutique gratuite | boutique.gratuite@demo.techkoin.test |
+| Particulier | particulier@demo.techkoin.test |
+
+## Tests de bout en bout
+
+Serveurs lances et donnees de demo chargees : `npm --prefix frontend run e2e` (mobile 360 px et bureau 1280 px). Captures de la phase 1 : `npm --prefix frontend run screenshots:phase1`, resultat dans `docs/screenshots/phase1/`.
