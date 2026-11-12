@@ -105,6 +105,14 @@ def placeholder_photo(label: str, kind: str, seed: int) -> SimpleUploadedFile:
     tone = rng.randint(226, 240)
     img = Image.new("RGB", (1200, 900), (tone, tone - 3, tone - 9))
     draw = ImageDraw.Draw(img)
+    # Large flat blocks give every image its own perceptual hash (duplicates stay detectable).
+    for _ in range(8):
+        bx, by = rng.randint(-100, 900), rng.randint(-100, 700)
+        shade = max(0, min(255, tone + rng.randint(-45, 15)))
+        draw.rectangle(
+            (bx, by, bx + rng.randint(200, 700), by + rng.randint(150, 500)),
+            fill=(shade, shade - 3, shade - 9),
+        )
     landscape = kind != "front" or rng.random() < 0.5
     w, h = (620, 400) if landscape else (330, 640)
     x, y = (1200 - w) // 2, (900 - h) // 2
