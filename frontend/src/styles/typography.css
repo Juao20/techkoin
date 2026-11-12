@@ -1,0 +1,36 @@
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: var(--fs-h1);
+}
+
+h2 {
+  font-size: var(--fs-h2);
+}
+
+h3 {
+  font-size: var(--fs-h3);
+}
+
+small,
+.small {
+  font-size: var(--fs-small);
+}
+
+.micro {
+  font-size: var(--fs-micro);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.text-2 {
+  color: var(--ink-2);
+}

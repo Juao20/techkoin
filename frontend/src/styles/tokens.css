@@ -1,0 +1,74 @@
+:root {
+  /* Fonds */
+  --bg: #f6f4ef; /* papier chaud, fond de page */
+  --surface: #ffffff; /* cartes, panneaux, champs */
+  --surface-2: #efece5; /* zones secondaires, en-têtes de tableau */
+
+  /* Texte */
+  --ink: #1b1915; /* texte principal */
+  --ink-2: #5a554c; /* texte secondaire */
+  --ink-3: #8a8478; /* texte tertiaire, placeholders (usage limité) */
+
+  /* Lignes */
+  --line: #ddd8ce; /* filets opaques */
+  --line-strong: #c4beb1; /* champs de formulaire, séparateurs forts */
+
+  /* Marque */
+  --green: #0b6b45; /* couleur principale : actions, liens, prix */
+  --green-ink: #08533a; /* survol / pressé */
+  --green-tint: #e3f0e8; /* fonds de succès, sélection */
+
+  --yellow: #e9b824; /* accent rare : bonne affaire, mise en avant */
+  --yellow-tint: #fbf1cf;
+
+  --red: #b42318; /* erreurs, risques, au-dessus du marché */
+  --red-tint: #fbe7e4;
+
+  --focus: #0b6b45; /* anneau de focus, 2px plein + 2px d'espacement */
+
+  /* Espacements (échelle de 4 px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Rayons */
+  --radius-sm: 4px; /* étiquettes, cases */
+  --radius-md: 6px; /* boutons, champs */
+  --radius-lg: 8px; /* cartes, panneaux, modales */
+
+  /* Ombre : uniquement pour les éléments flottants */
+  --shadow-float: 0 6px 20px rgba(27, 25, 21, 0.12);
+
+  /* Mouvement */
+  --transition: 140ms ease;
+
+  /* Polices */
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Mise en page */
+  --container: 1200px;
+  --gutter: 16px;
+  --touch: 44px;
+
+  /* Échelle typographique (mobile) */
+  --fs-h1: 30px;
+  --fs-h2: 24px;
+  --fs-h3: 18px;
+  --fs-body: 16px;
+  --fs-small: 14px;
+  --fs-micro: 12px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --fs-h1: 40px;
+    --fs-h2: 28px;
+    --fs-h3: 20px;
+  }
+}
