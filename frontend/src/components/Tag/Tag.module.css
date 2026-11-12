@@ -1,0 +1,25 @@
+.tag {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.neutral {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.green {
+  background: var(--green-tint);
+  color: var(--green-ink);
+}
+.yellow {
+  background: var(--yellow-tint);
+  color: var(--ink);
+}
+.red {
+  background: var(--red-tint);
+  color: var(--red);
+}
