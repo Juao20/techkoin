@@ -10,12 +10,12 @@ from marketplace.services import validate_for_publish
 @pytest.mark.django_db
 def test_seed_demo_creates_publishable_listings_and_is_idempotent():
     call_command("seed_catalog")
-    call_command("seed_demo", listings=12, days=3)
+    call_command("seed_demo", listings=34, days=3)
 
     assert Shop.objects.count() == 8
     assert User.objects.filter(email="boutique.pro@demo.techkoin.test").exists()
-    assert Listing.objects.count() == 12 + 5  # plus the suspicious ones
-    assert ListingPhoto.objects.count() >= 12 * 4
+    assert Listing.objects.count() == 34 + 5  # plus the suspicious ones
+    assert ListingPhoto.objects.count() >= 34 * 4
     assert Event.objects.exists()
     # Active listings respect the same rules as listings published through the API.
     for listing in Listing.objects.filter(status="active"):
@@ -28,9 +28,9 @@ def test_seed_demo_creates_publishable_listings_and_is_idempotent():
     assert all(listing.risk_score >= 40 for listing in queue)
 
     users_before = User.objects.count()
-    call_command("seed_demo", listings=12, days=3)
+    call_command("seed_demo", listings=34, days=3)
     assert User.objects.count() == users_before
 
-    call_command("seed_demo", listings=12, days=3, reset=True)
+    call_command("seed_demo", listings=34, days=3, reset=True)
     assert User.objects.count() == users_before
-    assert Listing.objects.count() == 12 + 5  # plus the suspicious ones
+    assert Listing.objects.count() == 34 + 5  # plus the suspicious ones

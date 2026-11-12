@@ -293,8 +293,12 @@ class Command(BaseCommand):
         grade = "" if is_new else rng.choices(["A", "B", "C"], [35, 50, 15])[0]
         ref = m.reference_price_new_fcfa or DEFAULT_NEW_PRICE[m.category]
         age = max(0, timezone.now().year - (m.release_year or timezone.now().year))
+        # Old stock sells below its launch price, new or used, so comparables stay coherent.
+        grade_factor = {"A": 1.08, "B": 1.0, "C": 0.85}
         factor = (
-            1.0 if is_new else max(0.25, 0.85 - 0.12 * age) * {"A": 1.0, "B": 0.9, "C": 0.75}[grade]
+            max(0.55, 1.0 - 0.07 * age)
+            if is_new
+            else max(0.30, 0.80 - 0.07 * age) * grade_factor[grade] / 1.08
         )
         deal = rng.choices([0.80, 1.0, 1.25], [12, 76, 12])[0]  # some bargains, some overpriced
         price = int(round(ref * factor * rng.uniform(0.95, 1.05) * deal, -3))
