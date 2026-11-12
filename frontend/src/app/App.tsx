@@ -13,6 +13,8 @@ const Styleguide = import.meta.env.DEV
 const LoginPage = lazy(() => import('../features/auth/LoginPage'))
 const RegisterPage = lazy(() => import('../features/auth/RegisterPage'))
 
+const SearchPage = lazy(() => import('../features/search/SearchPage'))
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
@@ -28,6 +30,7 @@ export function App() {
                 {Styleguide && <Route path="/_styleguide" element={<Styleguide />} />}
                 <Route element={<Layout />}>
                   <Route path="/" element={<Home />} />
+                  <Route path="/recherche" element={<SearchPage />} />
                   <Route path="/connexion" element={<LoginPage />} />
                   <Route path="/inscription" element={<RegisterPage />} />
                 </Route>
