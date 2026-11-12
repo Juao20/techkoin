@@ -1,8 +1,10 @@
 """Publication checks and moderation decisions."""
 
 from dataclasses import dataclass, field
+from datetime import timedelta
 
 from django.db import transaction
+from django.utils import timezone
 
 from . import risk
 from .imei import hash_identifier
@@ -78,6 +80,52 @@ def decide(listing, moderator, action: str, reason: str = "") -> ModerationDecis
     return ModerationDecision.objects.create(
         listing=listing, moderator=moderator, action=action, reason=listing.rejection_reason
     )
+
+
+DOCUMENT_RETENTION_DAYS = 90
+
+
+def decide_identity(user, approve: bool) -> None:
+    from accounts.models import User
+
+    user.identity_status = (
+        User.VerificationStatus.VERIFIED if approve else User.VerificationStatus.REJECTED
+    )
+    user.identity_decided_at = timezone.now()
+    user.save(update_fields=["identity_status", "identity_decided_at", "updated_at"])
+
+
+def decide_shop(shop, approve: bool) -> None:
+    from accounts.models import User
+
+    shop.verification_status = (
+        User.VerificationStatus.VERIFIED if approve else User.VerificationStatus.REJECTED
+    )
+    shop.verification_decided_at = timezone.now()
+    shop.save(update_fields=["verification_status", "verification_decided_at", "updated_at"])
+
+
+def purge_old_documents() -> int:
+    """Keep only the decision: delete documents 90 days after it was taken."""
+    from accounts.models import Shop, User
+
+    limit = timezone.now() - timedelta(days=DOCUMENT_RETENTION_DAYS)
+    purged = 0
+    for user in User.objects.filter(identity_decided_at__lte=limit).exclude(identity_document=""):
+        user.identity_document.delete(save=False)
+        if user.identity_selfie:
+            user.identity_selfie.delete(save=False)
+        user.identity_document = user.identity_selfie = ""
+        user.save(update_fields=["identity_document", "identity_selfie", "updated_at"])
+        purged += 1
+    for shop in Shop.objects.filter(verification_decided_at__lte=limit).exclude(
+        verification_document=""
+    ):
+        shop.verification_document.delete(save=False)
+        shop.verification_document = ""
+        shop.save(update_fields=["verification_document", "updated_at"])
+        purged += 1
+    return purged
 
 
 @transaction.atomic

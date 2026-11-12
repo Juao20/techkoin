@@ -1,6 +1,10 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from trust.storage import PrivateStorage
+
+private_storage = PrivateStorage()
+
 
 def identity_document_path(instance, filename):
     return f"identity/{instance.pk}/{filename}"
@@ -31,7 +35,13 @@ class User(AbstractUser):
     identity_status = models.CharField(
         max_length=20, choices=VerificationStatus.choices, default=VerificationStatus.NONE
     )
-    identity_document = models.FileField(upload_to=identity_document_path, blank=True)
+    identity_document = models.FileField(
+        upload_to=identity_document_path, storage=private_storage, blank=True
+    )
+    identity_selfie = models.FileField(
+        upload_to=identity_document_path, storage=private_storage, blank=True
+    )
+    identity_decided_at = models.DateTimeField(null=True, blank=True)
     is_moderator = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -62,6 +72,10 @@ class Shop(models.Model):
         choices=User.VerificationStatus.choices,
         default=User.VerificationStatus.NONE,
     )
+    verification_document = models.FileField(
+        upload_to="shops/%Y/%m/", storage=private_storage, blank=True
+    )
+    verification_decided_at = models.DateTimeField(null=True, blank=True)
     plan = models.CharField(max_length=10, choices=Plan.choices, default=Plan.FREE)
     plan_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

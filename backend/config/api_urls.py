@@ -8,6 +8,7 @@ urlpatterns = [
     path("", include("analytics.urls")),
     path("", include("marketplace.urls")),
     path("", include("pricing.urls")),
+    path("", include("trust.urls")),
     path("health/", health, name="health"),
     path("auth/csrf/", csrf, name="csrf"),
 ]
