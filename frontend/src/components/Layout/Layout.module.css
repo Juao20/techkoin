@@ -1,0 +1,164 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.bar {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-3) var(--gutter);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'logo nav'
+    'search search';
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.logo {
+  grid-area: logo;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+}
+
+.searchWrap {
+  grid-area: search;
+}
+
+.nav {
+  grid-area: nav;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sell {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  text-decoration: none;
+}
+.sell:hover {
+  background: var(--green-ink);
+}
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch);
+  min-width: var(--touch);
+  justify-content: center;
+  padding: 0 var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 500;
+}
+.account:hover {
+  color: var(--green);
+}
+
+.accountLabel {
+  display: none;
+}
+
+.search {
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+.search:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  border: 0;
+  font-size: var(--fs-body);
+  background: transparent;
+  outline: none;
+}
+
+.searchButton {
+  width: var(--touch);
+  border: 0;
+  background: var(--surface-2);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.searchButton:hover {
+  background: var(--green-tint);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter) var(--space-7);
+}
+
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.footerInner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+}
+.footerNav {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .bar {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'logo search nav';
+    gap: var(--space-5);
+  }
+  .accountLabel {
+    display: inline;
+  }
+  .footerInner {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
