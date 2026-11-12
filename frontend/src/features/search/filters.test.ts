@@ -34,6 +34,11 @@ describe('filtres dans l’URL', () => {
     expect(parse('page=-4').page).toBe(1)
   })
 
+  it('garde le filtre d’usage dans l’URL', () => {
+    expect(parse('usage=gaming').single.usage).toBe('gaming')
+    expect(roundTrip('category=laptop&usage=dev')).toContain('usage=dev')
+  })
+
   it('ne garde pas la page 1 dans l’URL', () => {
     expect(roundTrip('page=1')).toBe('')
   })

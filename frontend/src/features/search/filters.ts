@@ -27,6 +27,7 @@ const SINGLE = [
   'keyboard',
   'seller_type',
   'warranty',
+  'usage',
   'sort',
 ] as const
 

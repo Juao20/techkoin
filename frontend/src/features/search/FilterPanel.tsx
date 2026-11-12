@@ -5,6 +5,7 @@ import { Field } from '@/components/Field/Field'
 import fieldStyles from '@/components/Field/Field.module.css'
 import { useBrands, useCities } from '@/lib/catalog'
 import { CATEGORY_LABELS, CONDITION_LABELS } from '@/lib/listings'
+import { MOBILE_USAGES, PC_USAGES, USAGE_LABELS } from '@/lib/usage'
 import {
   clearFilters,
   countActive,
@@ -248,6 +249,21 @@ export function FilterPanel({ filters, onChange }: Props) {
               {flag('stylus', 'Stylet inclus')}
             </>
           )}
+        </Group>
+      )}
+
+      {(isComputer || isMobile) && (
+        <Group title="Usage conseillé">
+          <Pick
+            label="Je cherche pour"
+            filters={filters}
+            name="usage"
+            options={(isComputer ? PC_USAGES : MOBILE_USAGES).map((u) => ({
+              value: u,
+              label: USAGE_LABELS[u] ?? u,
+            }))}
+            onChange={onChange}
+          />
         </Group>
       )}
 
