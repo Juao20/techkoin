@@ -12,6 +12,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { ApiError, api } from '@/lib/api'
 import { toCard } from '@/lib/listings'
 import type { ListingCardApi, User } from '@/lib/types'
+import { VerificationTab } from './VerificationTab'
 import styles from './AccountPage.module.css'
 
 const STATUS: Record<string, { label: string; tone: TagTone }> = {
@@ -58,6 +59,7 @@ function MyListings() {
             <ListingCard listing={toCard(l)} />
             <div className={styles.itemActions}>
               <Tag tone={st.tone}>{st.label}</Tag>
+              {l.rejection_reason && <p className={styles.reason}>{l.rejection_reason}</p>}
               {l.status === 'draft' && (
                 <Link to={`/vendre/${l.id}`} className={styles.link}>
                   Reprendre
@@ -231,6 +233,11 @@ export default function AccountPage() {
           { value: 'listings', label: 'Mes annonces', content: <MyListings /> },
           { value: 'favorites', label: 'Favoris', content: <Favorites /> },
           { value: 'profile', label: 'Profil', content: <Profile user={user} /> },
+          {
+            value: 'verification',
+            label: 'Vérification',
+            content: <VerificationTab user={user} />,
+          },
         ]}
       />
     </div>
