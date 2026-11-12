@@ -98,7 +98,9 @@ def _finalize(listing: Listing) -> None:
         listing.title = services.build_title(listing) or listing.title
     listing.has_invoice = "invoice" in (listing.accessories or [])
     from pricing.services import recompute_listing
+    from trust.imei import hash_identifier
 
+    listing.imei_hash = hash_identifier(listing.imei_or_serial)
     recompute_listing(listing, save=False)
     services.refresh_search_text(listing)
     listing.slug = services.unique_slug(listing)

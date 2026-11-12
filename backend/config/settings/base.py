@@ -176,3 +176,19 @@ PRICING_MIN_COMPARABLES = 5
 PRICING_SOLD_WINDOW_DAYS = 120
 PRICING_SOLD_WEIGHT = 1.5
 PRICING_ROUND_TO = 5_000
+
+# Risk engine (section 8.3): phrases that suggest a scam, compared without case or accents.
+RISK_PHRASES = [
+    "paiement avant",
+    "paye avant",
+    "payez avant",
+    "envoie d'abord",
+    "envoyez d'abord",
+    "transfert d'abord",
+    "pas de rencontre",
+    "western union",
+    "paiement d'avance",
+    "payer d'avance",
+    "frais de reservation",
+    "frais de livraison a payer",
+]

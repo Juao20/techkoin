@@ -97,10 +97,13 @@ def validate_for_publish(listing: Listing) -> dict[str, str]:
         errors["city"] = "Indiquez la ville où se trouve l'appareil."
     if not listing.is_new and not listing.grade:
         errors["grade"] = "Choisissez la note d'état de l'appareil."
-    if not listing.imei_or_serial:
-        errors["imei_or_serial"] = (
-            "Saisissez l'IMEI ou le numéro de série. Il ne sera jamais affiché."
-        )
+    from trust.imei import validate_identifier
+
+    message = validate_identifier(
+        listing.imei_or_serial, listing.category, listing.brand.slug if listing.brand else ""
+    )
+    if message:
+        errors["imei_or_serial"] = message
     if listing.category in (Category.SMARTPHONE, Category.TABLET) and not listing.account_removed:
         errors["account_removed"] = (
             "Un appareil encore lié à un compte iCloud ou Google "
@@ -132,11 +135,23 @@ def active_count(user) -> int:
 
 def publish(listing: Listing) -> Listing:
     """Move a validated listing online (or to review for models outside the catalog)."""
-    listing.status = (
-        Listing.Status.PENDING_REVIEW if listing.device_model is None else Listing.Status.ACTIVE
-    )
-    if listing.moderation_flags.get("custom_model") is None and listing.device_model is None:
-        listing.moderation_flags = {**listing.moderation_flags, "custom_model": True}
+    from pricing.services import recompute_listing
+    from trust.services import evaluate_publication
+
+    recompute_listing(listing, save=False)
+    outcome = evaluate_publication(listing)
+    listing.imei_status = outcome.imei_status
+    listing.risk_score = outcome.score
+    flags = {
+        k: v for k, v in listing.moderation_flags.items() if k not in {"risk_rules", "priority"}
+    }
+    flags["risk_rules"] = outcome.rules
+    if outcome.priority:
+        flags["priority"] = True
+    if listing.device_model is None:
+        flags["custom_model"] = True
+    listing.moderation_flags = flags
+    listing.status = Listing.Status.PENDING_REVIEW if outcome.review else Listing.Status.ACTIVE
     listing.published_at = listing.published_at or timezone.now()
     listing.save()
     return listing

@@ -24,6 +24,9 @@ from catalog.models import City, DeviceModel
 from marketplace import services
 from marketplace.models import Favorite, Listing, ListingPhoto
 from marketplace.photos import process_upload
+from pricing.services import recompute_listing
+from trust.imei import hash_identifier
+from trust.models import StolenDeviceReport
 
 DEMO_DOMAIN = "@demo.techkoin.test"
 DEMO_PASSWORD = "Demo2026!"
@@ -146,6 +149,9 @@ class Command(BaseCommand):
         with transaction.atomic():
             shops, individuals = self.create_accounts()
         listings = self.create_listings(shops, individuals, opts["listings"])
+        for listing in listings:  # estimates need every listing to exist first
+            recompute_listing(listing)
+        self.create_suspicious(listings, individuals)
         self.create_events(listings, individuals, opts["days"])
         self.print_accounts()
 
@@ -157,6 +163,7 @@ class Command(BaseCommand):
             photo.thumb.delete(save=False)
         Event.objects.filter(user__in=demo_users).delete()
         Event.objects.filter(session_id__startswith="demo").delete()
+        StolenDeviceReport.objects.filter(police_reference__startswith="PV-2026-").delete()
         demo_users.delete()
         self.stdout.write("Données de démonstration supprimées.")
 
@@ -166,6 +173,8 @@ class Command(BaseCommand):
         return f"+2290197{n:06d}"
 
     def make_user(self, email_local, first, last, n, **extra) -> User:
+        # Established accounts by default; the last individuals (scenario sellers) are brand new.
+        extra.setdefault("date_joined", timezone.now() - timedelta(days=self.rng.randint(60, 500)))
         user = User(
             username=f"{email_local}{DEMO_DOMAIN}",
             email=f"{email_local}{DEMO_DOMAIN}",
@@ -230,6 +239,7 @@ class Command(BaseCommand):
                 100 + i,
                 city=self.rng.choice(self.cities).name,
                 quartier=self.rng.choice(QUARTIERS),
+                **({"date_joined": timezone.now() - timedelta(hours=3)} if i >= 20 else {}),
             )
             for i in range(25)
         ]
@@ -241,6 +251,11 @@ class Command(BaseCommand):
         rng = self.rng
         listings: list[Listing] = []
         per_individual = {u.pk: 0 for u in individuals}
+        # Popular models get several listings with the same storage, so estimates are reliable.
+        preferred = ["apple-iphone-13", "apple-iphone-11", "samsung-galaxy-a54", "apple-iphone-12"]
+        anchors = [m for slug in preferred for m in self.models if m.slug == slug] or self.models[
+            :4
+        ]
         for i in range(total):
             by_shop = i % 100 < 55
             if by_shop:
@@ -251,14 +266,15 @@ class Command(BaseCommand):
                 free = [u for u in individuals if per_individual[u.pk] < 4]
                 seller = rng.choice(free)
                 per_individual[seller.pk] += 1
-            listings.append(self.create_listing(seller, shop, i))
+            anchor = anchors[(i // 8) % len(anchors)] if i < 8 * len(anchors) else None
+            listings.append(self.create_listing(seller, shop, i, anchor))
             if (i + 1) % 25 == 0:
                 self.stdout.write(f"  {i + 1}/{total} annonces")
         return listings
 
-    def create_listing(self, seller, shop, index) -> Listing:
+    def create_listing(self, seller, shop, index, anchor=None) -> Listing:
         rng = self.rng
-        m = rng.choice(self.models)
+        m = anchor or rng.choice(self.models)
         new = shop is not None and rng.random() < 0.35
         condition = (
             "new_sealed"
@@ -272,10 +288,11 @@ class Command(BaseCommand):
         factor = (
             1.0 if is_new else max(0.25, 0.85 - 0.12 * age) * {"A": 1.0, "B": 0.9, "C": 0.75}[grade]
         )
-        price = int(round(ref * factor * rng.uniform(0.92, 1.1), -3))
+        deal = rng.choices([0.80, 1.0, 1.25], [12, 76, 12])[0]  # some bargains, some overpriced
+        price = int(round(ref * factor * rng.uniform(0.95, 1.05) * deal, -3))
         city = shop.city if shop else seller.city
         published = timezone.now() - timedelta(days=rng.randint(0, 85), hours=rng.randint(0, 23))
-        status = rng.choices(["active", "sold", "archived", "pending_review"], [86, 8, 3, 3])[0]
+        status = rng.choices(["active", "sold", "archived"], [88, 8, 4])[0]
 
         listing = Listing(
             seller=seller,
@@ -295,20 +312,21 @@ class Command(BaseCommand):
             + (["invoice"] if shop else []),
             warranty_months=rng.choice([3, 6, 12]) if shop or is_new else rng.choice([0, 0, 1]),
             provenance=rng.choice(["local", "europe", "usa", "dubai"]),
-            imei_or_serial=f"35{rng.randint(10**12, 10**13 - 1)}",
+            imei_or_serial=self.identifier(m),
             color=rng.choice(COLORS),
             status=status,
             published_at=published,
             sold_at=published + timedelta(days=rng.randint(1, 10)) if status == "sold" else None,
             ram_gb=rng.choice(m.ram_options_gb) if m.ram_options_gb else None,
-            storage_gb=rng.choice(m.storage_options_gb) if m.storage_options_gb else None,
+            storage_gb=(
+                (m.storage_options_gb[0] if anchor else rng.choice(m.storage_options_gb))
+                if m.storage_options_gb
+                else None
+            ),
             screen_size_in=m.screen_size_in,
             screen_resolution=m.screen_resolution,
             refresh_rate_hz=m.refresh_rate_hz,
             os=m.os,
-            price_badge=rng.choices(
-                ["good_deal", "fair", "above_market", "unknown"], [20, 55, 15, 10]
-            )[0],
         )
         if m.category in ("laptop", "desktop"):
             listing.processor = m.default_processor
@@ -330,18 +348,109 @@ class Command(BaseCommand):
         listing.has_invoice = "invoice" in listing.accessories
         services.refresh_search_text(listing)
         listing.slug = services.unique_slug(listing)
+        listing.imei_hash = hash_identifier(listing.imei_or_serial)
+        listing.imei_status = "ok"
         listing.save()
+        self.add_photos(listing, with_defect=grade == "C")
+        return listing
 
-        kinds = ["front", "back", "screen_on"] + (["defect"] if grade == "C" else []) + ["other"]
+    def add_photos(self, listing, with_defect=False, copy_of=None):
+        """Placeholder photos. `copy_of` reuses another listing's images (same perceptual hash)."""
+        source = copy_of or listing
+        kinds = ["front", "back", "screen_on"] + (["defect"] if with_defect else []) + ["other"]
         for position, kind in enumerate(kinds):
             image, thumb, phash = process_upload(
-                placeholder_photo(listing.title, kind, listing.pk * 10 + position)
+                placeholder_photo(source.title, kind, source.pk * 10 + position)
             )
             photo = ListingPhoto(listing=listing, kind=kind, phash=phash, position=position)
             photo.image.save(f"{listing.pk}.webp", image, save=False)
             photo.thumb.save(f"{listing.pk}.webp", thumb, save=False)
             photo.save()
-        return listing
+
+    def identifier(self, m) -> str:
+        """A valid IMEI (Luhn) for phones and tablets, a serial in the brand's format for PCs."""
+        rng = self.rng
+        if m.category in ("smartphone", "tablet"):
+            body = "35" + "".join(str(rng.randint(0, 9)) for _ in range(12))
+            total = 0
+            for i, ch in enumerate(reversed(body)):
+                n = int(ch)
+                if i % 2 == 0:
+                    n *= 2
+                    n -= 9 if n > 9 else 0
+                total += n
+            return body + str((10 - total % 10) % 10)
+        length = {"dell": 7, "asus": 12, "acer": 18, "lenovo": 9, "hp": 10}.get(m.brand.slug, 12)
+        return "".join(rng.choice("ABCDEFGHJKLMNPQRSTUVWXYZ0123456789") for _ in range(length))
+
+    # ----------------------------------------------------------- suspicious
+
+    def create_suspicious(self, listings, individuals):
+        """Five listings that must end up in the moderation queue, one per risk rule."""
+        active = [x for x in listings if x.status == "active" and x.shop_id is None]
+        originals = [x for x in listings if x.status == "active"]
+        base = max(originals, key=lambda x: x.estimate_sample_size)  # reliable estimate
+        scammers = [u for u in individuals if u.pk != base.seller_id][-5:]
+        contact = "Contactez-moi au 01 97 55 44 33 ou sur wa.me/22997554433"
+        scenarios = [
+            # Price far below the market (+35) and contact details in the text (+20).
+            (
+                "price",
+                {"price_fcfa": max(15_000, int(base.price_fcfa * 0.35)), "description": contact},
+            ),
+            # Scam wording (+30) and a phone number in the text (+20).
+            ("phrase", {"description": f"Envoie d'abord l'argent, pas de rencontre. {contact}"}),
+            # Same photos as another seller's listing (+40).
+            ("photo", {}),
+            # Same IMEI as another seller's listing (+40).
+            ("imei", {}),
+            # IMEI declared stolen and confirmed by a moderator: blocked, priority.
+            ("stolen", {}),
+        ]
+        created = []
+        for (kind, extra), seller in zip(scenarios, scammers, strict=True):
+            fields = dict(
+                seller=seller,
+                device_model_id=base.device_model_id,
+                category=base.category,
+                brand_id=base.brand_id,
+                condition_type="used",
+                grade="B",
+                price_fcfa=base.price_fcfa,
+                city=seller.city,
+                storage_gb=base.storage_gb,
+                ram_gb=base.ram_gb,
+                battery_health_pct=88,
+                account_removed=True,
+                imei_or_serial=self.identifier(base.device_model),
+                status="draft",
+                processor=base.processor,
+                storage_type=base.storage_type,
+            )
+            fields.update(extra)
+            if kind == "imei":
+                other = next((x for x in active if x.seller_id != seller.pk), originals[0])
+                fields["imei_or_serial"] = other.imei_or_serial
+            if kind == "stolen":
+                StolenDeviceReport.objects.create(
+                    imei_or_serial_hash=hash_identifier(fields["imei_or_serial"]),
+                    reporter=individuals[0],
+                    description="Téléphone volé à Dantokpa, plainte déposée.",
+                    police_reference="PV-2026-0142",
+                    status=StolenDeviceReport.Status.CONFIRMED,
+                )
+            listing = Listing(**fields)
+            listing.title = services.build_title(listing)
+            services.refresh_search_text(listing)
+            listing.slug = services.unique_slug(listing)
+            listing.imei_hash = hash_identifier(listing.imei_or_serial)
+            listing.save()
+            self.add_photos(listing, copy_of=base if kind == "photo" else None)
+            services.publish(listing)
+            created.append(listing)
+        queued = sum(1 for x in created if x.status == "pending_review")
+        self.stdout.write(f"  {queued}/5 annonces suspectes en modération")
+        return created
 
     # --------------------------------------------------------------- events
 
