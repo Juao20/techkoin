@@ -1,0 +1,55 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.label {
+  font-size: var(--fs-small);
+  font-weight: 500;
+}
+.error {
+  font-size: var(--fs-small);
+  color: var(--red);
+}
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  text-align: left;
+}
+.trigger[data-placeholder] {
+  color: var(--ink-3);
+}
+.trigger[aria-invalid='true'] {
+  border-color: var(--red);
+}
+.content {
+  min-width: var(--radix-select-trigger-width);
+  max-height: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+  z-index: 50;
+}
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  cursor: pointer;
+  outline: none;
+}
+.item[data-highlighted] {
+  background: var(--green-tint);
+}
