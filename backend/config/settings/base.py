@@ -82,6 +82,7 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = "accounts.User"
+AUTHENTICATION_BACKENDS = ["accounts.backends.EmailOrPhoneBackend"]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -117,8 +118,13 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "300/hour", "user": "1000/hour"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "300/hour",
+        "user": "1000/hour",
+        "auth": "30/hour",
+    },
 }
 
 # Sessions and CSRF: the SPA and the API share the same origin (Vite proxy in dev).
