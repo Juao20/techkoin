@@ -1,0 +1,33 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.track {
+  position: relative;
+  height: 4px;
+  background: var(--line);
+  margin: var(--space-2) 0;
+}
+.range {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--green);
+}
+.marker {
+  position: absolute;
+  top: -6px;
+  width: 2px;
+  height: 16px;
+  background: var(--ink);
+  transform: translateX(-1px);
+}
+.caption {
+  font-size: var(--fs-small);
+  color: var(--ink-2);
+}
+.mono {
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
