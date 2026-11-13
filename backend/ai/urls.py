@@ -7,5 +7,7 @@ urlpatterns = [
     path("ai/search/", views.SearchView.as_view()),
     path("ai/describe/", views.DescribeView.as_view()),
     path("ai/assistant/", views.AssistantView.as_view()),
+    path("ai/compare/", views.CompareView.as_view()),
+    path("ai/compare/suggestions/", views.CompareSuggestions.as_view()),
     path("ai/voice/", views.VoiceView.as_view()),
 ]

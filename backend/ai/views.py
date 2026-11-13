@@ -7,8 +7,10 @@ from rest_framework.views import APIView
 from analytics.models import Event
 from analytics.tracking import track
 from marketplace.models import Listing
+from marketplace.serializers import ListingCardSerializer
+from pricing import compare as calc
 
-from . import assistant, client, describe, search, voice
+from . import assistant, client, compare, describe, search, voice
 from .throttles import FeatureThrottle
 
 
@@ -99,6 +101,49 @@ class AssistantView(APIView):
         payload = assistant.run(listing, question, request.data.get("history"), user=user)
         track(Event.Type.AI_ASSISTANT_QUESTION, request, listing=listing, query_text=question[:200])
         return Response(payload)
+
+
+class CompareView(APIView):
+    """F5, « Verdict TechKoin »: 2 or 3 listings of the same category."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [FeatureThrottle]
+    ai_feature = "compare"
+
+    def post(self, request):
+        ids = request.data.get("ids") or []
+        try:
+            ids = [int(i) for i in ids]
+            usage = request.data.get("usage") or None
+            budget = int(request.data["budget"]) if request.data.get("budget") else None
+            user = request.user if request.user.is_authenticated else None
+            payload = compare.run(ids, usage, budget, user=user)
+        except (TypeError, ValueError) as exc:
+            message = (
+                str(exc)
+                if isinstance(exc, calc.CompareError)
+                else "Demande de comparaison invalide."
+            )
+            return Response({"code": "invalid_comparison", "message": message}, status=400)
+        listings = calc.load(payload["listing_ids"])
+        payload["listings"] = ListingCardSerializer(
+            listings, many=True, context={"request": request}
+        ).data
+        track(Event.Type.COMPARE, request, listing=listings[0], metadata={"ids": ids})
+        return Response(payload)
+
+
+class CompareSuggestions(APIView):
+    """Two alternatives picked by Django for the « Comparer avec des annonces similaires » block."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        listing = get_object_or_404(
+            Listing, pk=request.query_params.get("listing_id") or 0, status="active"
+        )
+        found = calc.alternatives(listing)
+        return Response(ListingCardSerializer(found, many=True, context={"request": request}).data)
 
 
 class AIStatus(APIView):
