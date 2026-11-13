@@ -144,3 +144,19 @@ Compte boutique obligatoire (`403` sinon). `IsProShop` est la seule barrière de
 | GET | `insights/competition/{listing_id}/` | Pro | P7 : les 3 annonces concurrentes les plus proches et les actions conseillées |
 
 « Aperçu » : une boutique gratuite reçoit le premier élément seulement, avec `preview: true`, `total` et `hidden`, sans recommandations ni corrections. Les textes rédigés par le modèle sont rejetés s'ils contiennent un chiffre absent des données (repli sur un texte généré). Commandes planifiées : `send_weekly_reports` (lundi 8 h, heure de Porto-Novo) et `release_due_orders` (toutes les 15 minutes, termine aussi les abonnements échus).
+
+## Alertes, facettes et partage (phase 6)
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET / POST | `me/alerts/` | Mes recherches enregistrées. POST : `{filters, name?, channel?}`. Les filtres ont le format des paramètres d'URL de la recherche ; seuls les paramètres connus sont gardés (ni page, ni tri). 10 alertes au plus ; la même recherche n'est pas enregistrée deux fois. `channel` : `email` (par défaut), `in_app`, `whatsapp` (l'envoi WhatsApp n'est pas branché : la notification interne reste) |
+| PATCH / DELETE | `me/alerts/{id}/` | Pause (`is_active`), canal, nom ; suppression |
+| GET | `me/notifications/` | `{unread, results}` : notifications internes, la plus récente d'abord |
+| POST | `me/notifications/` | Marque tout comme lu |
+| GET | `listings/facets/` | Mêmes paramètres que `listings/`. Compteurs par option : `category`, `brand`, `condition`, `grade`, `seller_type`, `flags` et `total`. Chaque groupe ignore son propre filtre, pour montrer ce que donnerait un autre choix |
+
+Le filtre `warranty` accepte maintenant un nombre de mois (`warranty=6`) ; `warranty=1` reste « avec garantie ».
+
+Commande planifiée toutes les 15 minutes : `manage.py send_alerts`. Pour chaque alerte active, elle cherche les annonces publiées depuis la dernière notification qui correspondent aux filtres (hors annonces de l'utilisateur lui-même), crée une notification, envoie l'e-mail si le canal est `email`, puis avance le curseur : relancer la commande n'envoie jamais deux fois.
+
+Hors `/api/` : `/annonce/<slug>` et `/boutique/<slug>` renvoient l'`index.html` construit avec les balises Open Graph et Twitter de la page (titre, prix, ville, première photo). Les brouillons et les annonces retirées ne sont jamais exposés. Les autres routes renvoient l'`index.html` tel quel. Voir `docs/DEPLOYMENT.md`.

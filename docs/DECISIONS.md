@@ -92,6 +92,17 @@ Format : date, question, choix, raison.
 - Aperçu gratuit : P1 à P3 répondent aux boutiques gratuites avec le premier élément ; P4 à P7 répondent `403`. Le plan en vigueur est `plan = pro` et `plan_expires_at` non échu (sans date : accordé à la main, cas de la démo).
 - Les erreurs DRF (`detail`) sont converties en `{code, message}` pour toute l'API.
 - Données de démonstration : la boutique Pro a 16 annonces en ligne et une demande « macbook m1 » à moins de 400 000 FCFA à Cotonou, plantée sur la dernière semaine. Les écrans datent de `seed_demo` : relancer `seed_demo --reset` si les données ont plus de quelques jours.
+## 2026-11-13 : Choix de la phase 6
+
+- Alerte : le curseur de départ est la date de création, donc seules les annonces publiées ensuite déclenchent un message. La notification interne est toujours créée ; l'e-mail s'y ajoute pour le canal `email`. Le canal `whatsapp` est accepté et garde la notification interne : l'interface `Sender` est prête, l'envoi viendra avec l'intégration.
+- Facettes : un groupe ignore son propre filtre (comportement usuel des marketplaces). Les compteurs réutilisent `search.apply_filters`, aucun filtre n'est réimplémenté. Une dizaine de requêtes par appel : acceptable à ce volume, à mettre en cache si besoin.
+- Le filtre de garantie du panneau envoie un nombre de mois alors que l'API ne connaissait que « 1 » : corrigé côté API, avec test.
+- Open Graph : une route attrape-tout de Django sert l'`index.html` construit ; en développement Vite sert les pages et il n'y a pas d'aperçu. Le texte d'une boutique ou d'une annonce est échappé avant d'entrer dans le HTML.
+- Erreurs d'API : le `403` d'une fonction Pro et les autres erreurs DRF suivent le format `{code, message}` (phase 5).
+- PostgreSQL : le script `scripts/test_postgres.py` démarre un serveur jetable (paquet `pgserver`) ; sous Windows ce paquet est livré sans les fichiers de fuseaux horaires de PostgreSQL, le script emprunte ceux de `tzdata`. Dépendances ajoutées hors liste (règle 0.7) : `psycopg[binary]` (pilote de production), `pgserver` et `tzdata` (tests locaux seulement).
+- Lighthouse : pas installé sur la machine, lancé par `npx` ; Chrome ne démarrait pas depuis Lighthouse sous Windows, on lui fournit le Chromium de Playwright par le port de débogage. Résultats et méthode dans `docs/PERFORMANCE.md`.
+- Pages légales : textes en langage simple qui décrivent ce que fait l'application. Ils n'ont pas été relus par un juriste et ne donnent pas d'adresse de contact : à compléter avant le lancement.
+- Rappel de la checklist 15.12, repassée par recherche dans tout le code du front : aucun dégradé, flou, halo, police étrangère, bordure `rgba`, animation au défilement ni emoji ; seules les ombres des éléments flottants (`--shadow-float`) subsistent.
 ## A verifier plus tard
 
 - Phase 4 : creer un compte FedaPay sandbox et verifier le parcours complet (paiement, webhook, versement) avec de vraies cles.

@@ -4,7 +4,7 @@ Marketplace de reference au Benin pour acheter et vendre des PC, smartphones et 
 
 Le cahier des charges complet se trouve dans [TECHKOIN_SPEC.md](TECHKOIN_SPEC.md). Les choix pris en cours de route sont dans [docs/DECISIONS.md](docs/DECISIONS.md).
 
-Etat : phase 5 (boutiques et analyse IA) terminee, en attente de validation.
+Etat : phase 6 (alertes et finitions) terminee, en attente de validation. Le MVP est complet.
 
 ## Installation (Windows, PowerShell)
 
@@ -72,7 +72,7 @@ A planifier en production :
 
 Par defaut le simulateur (`PAYMENT_PROVIDER=simulator`). Numeros de test : fin en `00` refuse, `77` valide apres 5 secondes, `99` reste en attente (bouton « Valider le paiement simule » en developpement), tout autre numero est valide. Pour FedaPay : `PAYMENT_PROVIDER=fedapay` et les cles sandbox dans `.env`.
 
-A planifier : `manage.py release_due_orders` toutes les 15 minutes (termine aussi les abonnements Pro echus) et `manage.py send_weekly_reports` chaque lundi a 8 h (heure de Porto-Novo) : rapport hebdomadaire des boutiques Pro par e-mail (console en developpement, SMTP en production via `EMAIL_BACKEND`).
+A planifier : `manage.py release_due_orders` toutes les 15 minutes (termine aussi les abonnements Pro echus) `manage.py send_alerts` toutes les 15 minutes (alertes de recherche) et `manage.py send_weekly_reports` chaque lundi a 8 h (heure de Porto-Novo) : rapport hebdomadaire des boutiques Pro par e-mail (console en developpement, SMTP en production via `EMAIL_BACKEND`).
 
 ## Tableau de bord boutique
 
@@ -81,3 +81,7 @@ Connexion avec un compte boutique puis "Espace pro" (`/pro`). L'offre Pro coute 
 ## Tests de bout en bout
 
 Serveurs lances et donnees de demo chargees : `npm --prefix frontend run e2e` (mobile 360 px et bureau 1280 px). Captures de la phase 1 : `npm --prefix frontend run screenshots:phase1`, resultat dans `docs/screenshots/phase1/`.
+
+## PostgreSQL et deploiement
+
+Les tests passent sur SQLite et sur PostgreSQL : `.\.venv\Scripts\python.exe scripts\test_postgres.py` demarre un PostgreSQL jetable et lance toute la suite dessus. Mise en ligne, nginx, taches planifiees : [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Performance et accessibilite : [docs/PERFORMANCE.md](docs/PERFORMANCE.md). Captures de la phase 6 : `npm --prefix frontend run screenshots:phase6`.
