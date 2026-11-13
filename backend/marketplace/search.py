@@ -4,7 +4,20 @@ Keeping text search in one place lets us swap in PostgreSQL full-text search lat
 without touching views or serializers (see TECHKOIN_SPEC.md, section 3.1).
 """
 
-from django.db.models import Case, Count, IntegerField, Q, QuerySet, Value, When
+from django.db.models import (
+    Case,
+    Count,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    IntegerField,
+    Q,
+    QuerySet,
+    Value,
+    When,
+)
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast
 
 from catalog.models import City, Processor
 
@@ -119,8 +132,10 @@ def apply_filters(qs: QuerySet, params) -> QuerySet:
     if flag(params, "invoice"):
         qs = qs.filter(has_invoice=True)
     if usage := params.get("usage"):
-        # Advised usage: a score of 7 or more (see pricing/usage.py).
-        qs = qs.filter(**{f"usage_scores__{usage}__gte": 7})
+        # Advised usage: a score of 7 or more by default (see pricing/usage.py); the smart
+        # search may lower the bar with `usage_min` when nothing reaches 7.
+        floor = to_int(params, "usage_min")
+        qs = qs.filter(**{f"usage_scores__{usage}__gte": floor if floor else 7})
     if flag(params, "secure_payment"):
         qs = qs.filter(accepts_secure_payment=True)
     return qs
@@ -139,8 +154,26 @@ def apply_city(qs: QuerySet, slug: str) -> QuerySet:
     )
 
 
+USAGES = {
+    "office", "study", "dev", "gaming", "creative", "battery", "everyday", "photo", "business",
+}  # fmt: skip
+
+
+def usage_sort_key(sort: str) -> str | None:
+    """`usage:gaming` ranks listings by their usage score, best first."""
+    if sort.startswith("usage:") and sort[6:] in USAGES:
+        return sort[6:]
+    return None
+
+
 def apply_sort(qs: QuerySet, sort: str, has_city: bool) -> QuerySet:
     prefix = ["city_rank"] if has_city else []
+    if key := usage_sort_key(sort):
+
+        score = Cast(KeyTextTransform(key, "usage_scores"), FloatField())
+        return qs.annotate(usage_rank=score).order_by(
+            *prefix, F("usage_rank").desc(nulls_last=True), "price_fcfa"
+        )
     if sort == "price_asc":
         return qs.order_by(*prefix, "price_fcfa", "-published_at")
     if sort == "price_desc":
@@ -148,7 +181,6 @@ def apply_sort(qs: QuerySet, sort: str, has_city: bool) -> QuerySet:
     if sort == "recent":
         return qs.order_by(*prefix, "-published_at")
     if sort == "best_deal":
-        from django.db.models import ExpressionWrapper, F, FloatField
 
         return (
             qs.filter(estimate_mid__gt=0)
@@ -189,5 +221,6 @@ def search_listings(params) -> QuerySet:
         before = qs
         qs = apply_city(qs, city)
         has_city = qs is not before
-    sort = params.get("sort") if params.get("sort") in SORTS else "relevance"
+    requested = params.get("sort", "")
+    sort = requested if requested in SORTS or usage_sort_key(requested) else "relevance"
     return apply_sort(qs, sort, has_city).prefetch_related("photos")

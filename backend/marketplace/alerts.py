@@ -30,7 +30,7 @@ FILTER_KEYS = {
     "storage_min", "storage_type", "gpu_dedicated", "keyboard", "os", "screen_min", "screen_max",
     "cpu_family", "cpu_gen_min", "battery_min", "5g", "dual_sim", "unlocked", "no_replaced_parts",
     "cellular", "stylus", "verified", "seller_type", "warranty", "invoice", "usage",
-    "secure_payment", "city",
+    "secure_payment", "city", "usage_min",
 }  # fmt: skip
 
 

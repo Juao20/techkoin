@@ -28,6 +28,7 @@ const SINGLE = [
   'seller_type',
   'warranty',
   'usage',
+  'usage_min',
   'sort',
 ] as const
 

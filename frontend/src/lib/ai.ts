@@ -17,6 +17,8 @@ export type SearchInterpretation = {
   query: string
   filters: Record<string, string>
   chips: SearchChip[]
+  /** Said when a wish was relaxed (« peu d’appareils sont notés 7 sur 10… »). */
+  notes?: string[]
   confidence: number
   used_ai: boolean
 }

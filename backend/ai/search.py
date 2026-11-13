@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 
 from catalog.models import Brand, City, DeviceModel
+from marketplace.models import Listing
+from marketplace.search import search_listings
 
 from . import cache, client, privacy
 from .fallback import query_parser
@@ -163,9 +165,102 @@ def chips(intent: SearchIntent) -> list[dict[str, str]]:
     return out
 
 
+# ----------------------------------------------------------------------------- refinement
+#
+# The words of a request (« pas cher », « premium », « pour jouer ») are positions on a scale, not
+# exact values. They are turned into budgets and rankings from the listings that really exist,
+# so a request never returns nothing just because no device is perfect.
+
+TIER_LABEL = {"cheap": "pas cher", "mid": "milieu de gamme", "premium": "premium"}
+MIN_GOOD = 3  # fewer than this at the strict usage score: look at what is nearly as good
+
+
+def _round(value: int, step: int = 5_000) -> int:
+    return int(round(value / step) * step)
+
+
+def tier_bounds(category: str | None) -> tuple[int, int] | None:
+    """Lower and upper third of the prices on sale in a category (all of them without one)."""
+    qs = Listing.objects.filter(status__in=[Listing.Status.ACTIVE, Listing.Status.RESERVED])
+    if category:
+        qs = qs.filter(category=category)
+    prices = sorted(qs.values_list("price_fcfa", flat=True))
+    if len(prices) < 6:
+        return None
+    return _round(prices[len(prices) // 3]), _round(prices[2 * len(prices) // 3])
+
+
+def refine(intent: SearchIntent, params: dict[str, str]) -> tuple[dict, list[dict], list[str]]:
+    """Return (params, chips replacing the raw ones, notes shown to the user)."""
+    params = dict(params)
+    extra: list[dict] = []
+    notes: list[str] = []
+
+    if intent.tier and not (intent.price_min or intent.price_max):
+        bounds = tier_bounds(intent.category)
+        if bounds:
+            low, high = bounds
+            label = TIER_LABEL[intent.tier]
+            if intent.tier == "cheap":
+                params["price_max"], params["sort"] = str(low), "price_asc"
+                extra.append(
+                    {"keys": ["price_max", "sort"], "label": f"{label}, jusqu'à {fcfa(low)}"}
+                )
+            elif intent.tier == "mid":
+                params["price_min"], params["price_max"] = str(low), str(high)
+                extra.append(
+                    {
+                        "keys": ["price_min", "price_max"],
+                        "label": f"{label}, de {fcfa(low)} à {fcfa(high)}",
+                    }
+                )
+            else:
+                params["price_min"], params["sort"] = str(high), "price_desc"
+                extra.append({"keys": ["price_min", "sort"], "label": f"{label}, dès {fcfa(high)}"})
+
+    baseline = {k: v for k, v in params.items() if k != "usage"}
+    if intent.usage and not search_listings(baseline).exists():
+        # Nothing matches the rest of the request anyway: keep the plain usage filter.
+        params["usage"] = intent.usage
+        extra.append({"keys": ["usage"], "label": f"usage {USAGE_LABEL[intent.usage]}"})
+    elif intent.usage:
+        name = USAGE_LABEL[intent.usage]
+        chosen = None
+        for floor in (7, 5):
+            trial = {**params, "usage": intent.usage}
+            if floor != 7:
+                trial["usage_min"] = str(floor)
+            found = search_listings(trial).count()
+            if found >= MIN_GOOD or (floor == 5 and found >= 1):
+                chosen = (floor, trial)
+                break
+        if chosen:
+            floor, trial = chosen
+            params = {**trial, "sort": f"usage:{intent.usage}"}
+            if floor == 7:
+                extra.append({"keys": ["usage", "sort"], "label": f"usage {name}"})
+            else:
+                extra.append(
+                    {"keys": ["usage", "usage_min", "sort"], "label": f"adapté à : {name}"}
+                )
+                notes.append(
+                    f"Peu d'appareils sont notés 7 sur 10 ou plus pour {name} : "
+                    f"voici ceux notés {floor} sur 10 ou plus, les mieux notés d'abord."
+                )
+        else:
+            params.pop("usage", None)
+            params["sort"] = f"usage:{intent.usage}"
+            extra.append({"keys": ["sort"], "label": f"classés pour : {name}"})
+            notes.append(
+                f"Aucun appareil n'est noté 5 sur 10 pour {name} : "
+                "voici les mieux classés pour cet usage."
+            )
+    return params, extra, notes
+
+
 def run(query: str, user=None) -> dict:
     query = privacy.scrub_text(" ".join(query.split())[:200])
-    key = cache.make_key("search", query.lower())
+    key = cache.make_key("search:v2", query.lower())
     if (hit := cache.get(key)) is not None:
         client._log("search", user, None, success=True, cache_hit=True)
         return hit
@@ -189,10 +284,16 @@ def run(query: str, user=None) -> dict:
         user=user,
     )
     intent = sanitize(result.value)
+    params, extra_chips, notes = refine(intent, to_params(intent))
+    replaced = {"usage"} if intent.usage else set()
+    if intent.tier and not (intent.price_min or intent.price_max):
+        replaced |= {"price_min", "price_max"}
+    raw_chips = [c for c in chips(intent) if not replaced & set(c["keys"])]
     payload = {
         "query": query,
-        "filters": to_params(intent),
-        "chips": chips(intent),
+        "filters": params,
+        "chips": raw_chips + extra_chips,
+        "notes": notes,
         "confidence": intent.confidence,
         "used_ai": not result.fallback_used,
     }

@@ -102,6 +102,11 @@ export function SmartSearch({ onApply, onRemove, initialQuery = '', autoRun = fa
               Je n’ai rien reconnu. Essayez avec un budget, une ville ou un type d’appareil.
             </p>
           )}
+          {(result.notes ?? []).map((n) => (
+            <p key={n} className={styles.notice}>
+              {n}
+            </p>
+          ))}
           {result.used_ai && <p className={styles.notice}>{AUTO_NOTICE}</p>}
         </div>
       )}

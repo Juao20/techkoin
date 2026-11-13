@@ -97,7 +97,7 @@ export default function SearchPage() {
               <select
                 aria-label="Trier par"
                 className={styles.sortSelect}
-                value={filters.single.sort ?? 'relevance'}
+                value={filters.single.sort || 'relevance'}
                 onChange={(e) =>
                   update(
                     withSingle(
@@ -108,6 +108,9 @@ export default function SearchPage() {
                   )
                 }
               >
+                {filters.single.sort?.startsWith('usage:') && (
+                  <option value={filters.single.sort}>Les mieux adaptés à l’usage</option>
+                )}
                 {SORTS.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}

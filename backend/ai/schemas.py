@@ -11,6 +11,7 @@ Usage = Literal[
     "office", "study", "dev", "gaming", "creative", "battery", "everyday", "photo", "business"
 ]
 Keyboard = Literal["azerty", "qwerty", "qwertz"]
+Tier = Literal["cheap", "mid", "premium"]
 
 
 class SearchIntent(BaseModel):
@@ -27,6 +28,7 @@ class SearchIntent(BaseModel):
     storage_min: int | None = Field(default=None, ge=0, le=16384)
     usage: Usage | None = None
     keyboard: Keyboard | None = None
+    tier: Tier | None = None  # « pas cher », « milieu de gamme », « premium »
     other_terms: list[str] = Field(default_factory=list, max_length=6)
     confidence: float = Field(default=0.0, ge=0, le=1)
 

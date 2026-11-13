@@ -92,14 +92,67 @@ USAGE_WORDS = [
     ),
     ("study", ("ecole", "etude", "etudes", "etudiant", "cours", "fac", "universite", "lycee")),
     ("office", ("bureautique", "bureau", "travail", "word", "excel", "office", "secretariat")),
-    ("battery", ("autonomie", "longue batterie", "batterie longue duree")),
+    (
+        "battery",
+        (
+            "autonomie",
+            "longue batterie",
+            "batterie longue duree",
+            "leger",
+            "legere",
+            "ultrabook",
+            "ultra portable",
+            "nomade",
+        ),
+    ),
     ("everyday", ("quotidien", "usage courant")),
 ]
+# Price positioning. The words say a tier; the budget behind it comes from the live listings.
+TIER_WORDS = [
+    ("mid", ("milieu de gamme", "moyenne gamme", "gamme moyenne", "rapport qualite prix")),
+    (
+        "premium",
+        (
+            "premium",
+            "haut de gamme",
+            "luxe",
+            "meilleur",
+            "meilleure",
+            "meilleurs",
+            "performant",
+            "performante",
+            "puissant",
+            "puissante",
+            "haute performance",
+            "top niveau",
+        ),
+    ),
+    (
+        "cheap",
+        (
+            "pas cher",
+            "pas chere",
+            "pas trop cher",
+            "moins cher",
+            "bon marche",
+            "petit prix",
+            "petit budget",
+            "budget serre",
+            "abordable",
+            "economique",
+            "entree de gamme",
+            "premier prix",
+            "low cost",
+        ),
+    ),
+]
+DESKTOP_RE = re.compile(r"\b(pc|ordinateur|ordi|ordinateurs)\s+de\s+bureau\b")
 STOPWORDS = set(
     "un une des du de la le les pour pas trop cher chere vers a au aux en et ou avec sans "
     "sur dans que qui je veux voudrais cherche recherche besoin ai il y est ce cet cette mon ma "
     "mes pres proche environ max maximum moins plus budget bon bonne petit petite grand "
-    "prix fcfa cfa f".split()
+    "prix fcfa cfa f ultra gamer gaming premium luxe gamme meilleur meilleure meilleurs "
+    "performant performante puissant puissante leger legere nomade abordable economique".split()
 )
 
 
@@ -174,6 +227,19 @@ def parse(
     hits += bool(low or high)
     for s, e in sorted(spans, reverse=True):
         t = t[:s] + " " * (e - s) + t[e:]
+
+    # « pc de bureau » is a desktop computer, not an office usage.
+    desktop_phrase = bool(DESKTOP_RE.search(t))
+    if desktop_phrase:
+        t = DESKTOP_RE.sub("pc fixe", t)
+
+    # Price positioning, only when no amount was given.
+    if not (low or high):
+        for tier, words in TIER_WORDS:
+            if any(re.search(rf"\b{re.escape(w)}\b", t) for w in words):
+                intent.tier = tier
+                break
+    hits += bool(intent.tier)
 
     # Brands and cities come before the category so that "iphone" can imply a smartphone.
     for slug, name in brands:
