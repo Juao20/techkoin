@@ -68,6 +68,12 @@ A planifier en production :
 .\.venv\Scripts\python.exe backend\manage.py purge_verification_documents   # chaque jour : documents supprimes 90 jours apres la decision
 ```
 
+## Paiement sandbox
+
+Par defaut le simulateur (`PAYMENT_PROVIDER=simulator`). Numeros de test : fin en `00` refuse, `77` valide apres 5 secondes, `99` reste en attente (bouton « Valider le paiement simule » en developpement), tout autre numero est valide. Pour FedaPay : `PAYMENT_PROVIDER=fedapay` et les cles sandbox dans `.env`.
+
+A planifier : `manage.py release_due_orders` toutes les 15 minutes.
+
 ## Tests de bout en bout
 
 Serveurs lances et donnees de demo chargees : `npm --prefix frontend run e2e` (mobile 360 px et bureau 1280 px). Captures de la phase 1 : `npm --prefix frontend run screenshots:phase1`, resultat dans `docs/screenshots/phase1/`.

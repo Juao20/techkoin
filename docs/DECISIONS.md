@@ -70,6 +70,18 @@ Format : date, question, choix, raison.
 - Dictée : sans clé Groq (donc sans transcription), le bouton n'est pas affiché. L'audio est lu en mémoire et n'est jamais enregistré ; Django peut toutefois le placer dans un fichier temporaire au-delà de 2,5 Mo (limite fixée à 3 Mo).
 - Non faits : la requête « compare X et Y » saisie dans la recherche, et l'usage « Pro » (200 requêtes par jour) qui relève de la phase 5.
 
+## 2026-11-13 : Choix de la phase 4
+
+- Un paiement refusé ou non validé dans les 30 minutes annule la commande (comme dans la machine à états de la spécification) ; l'acheteur crée une nouvelle commande. Une commande « créée » non payée est annulée au bout de 30 minutes. Seules les commandes payées ou en cours de paiement bloquent l'annonce.
+- Un litige peut être ouvert dès que le paiement est en séquestre, pas seulement après la remise : sans cela un vendeur qui ne se présente jamais bloquerait l'argent de l'acheteur.
+- Un paiement qui réussit alors que l'annonce a été vendue entre-temps est remboursé aussitôt.
+- Le versement et le remboursement du simulateur réussissent toujours. Si le versement échoue chez le fournisseur, la commande reste en litige à traiter par un modérateur.
+- Champ `accepts_secure_payment` ajouté aux annonces (vrai par défaut, case à cocher à l'étape Prix) : il alimente le filtre `secure_payment` de la section 6.
+- **FedaPay, non testé avec de vraies clés :** l'intégration suit la documentation publique (création de transaction, jeton de paiement, signature HMAC-SHA256 de `t.corps` dans `X-FEDAPAY-SIGNATURE`, versements par `/payouts`). Les noms de champs, les modes d'opérateur des versements (`mtn_open`, `moov`, `celtiis_bj`) et le remboursement par versement sont à confirmer dans le bac à sable. Les tests utilisent un faux serveur.
+- Les webhooks sont rendus idempotents par un enregistrement `webhook:<fournisseur>:<id d'événement>` ; un horodatage de plus de 5 minutes est refusé.
+- Données de démonstration : 10 commandes sandbox (libérées, en séquestre, remises, en litige, remboursée, annulée, en attente).
+
 ## A verifier plus tard
 
+- Phase 4 : creer un compte FedaPay sandbox et verifier le parcours complet (paiement, webhook, versement) avec de vraies cles.
 - Phase 3 : tester avec une vraie cle Groq (mode JSON des modeles `openai/gpt-oss-*`, transcription `whisper-large-v3`).

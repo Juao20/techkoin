@@ -100,3 +100,24 @@ Sans `GROQ_API_KEY`, tout fonctionne en mode repli. Limites par heure (visiteur,
 | POST | `listings/{id}/whatsapp/` | accepte maintenant `{message}` (300 caractères) pour la question au vendeur |
 
 F6 (anti-arnaque) n'a pas de route : elle ajoute de 0 à 25 points au score de risque à la publication (règle `ai_signal`) et ne bloque jamais seule. Chaque appel est journalisé dans `AIRequestLog` (visible dans l'admin).
+## Paiement sécurisé (sandbox)
+
+Tout est en mode test. Fournisseur choisi par `PAYMENT_PROVIDER` (`simulator` par défaut, `fedapay`). Commission : `ESCROW_COMMISSION_PCT` (3 %), minimum `ESCROW_COMMISSION_MIN_FCFA` (500), payée par le vendeur.
+
+| Méthode | Route | Description |
+|---|---|---|
+| POST | `orders/` | `{listing_id, delivery_mode?, meetup_note?}`. Crée la commande (une commande « créée » de l'acheteur est réutilisée) |
+| GET / PATCH | `orders/{id}/` | Acheteur, vendeur ou modérateur. Le GET interroge le fournisseur si un paiement est en attente. PATCH : mode de remise, avant paiement |
+| POST | `orders/{id}/pay/` | `{operator: mtn\|moov\|celtiis, phone}`. En-tête `Idempotency-Key` facultatif |
+| POST | `orders/{id}/handed-over/` | Vendeur : l'appareil est remis |
+| POST | `orders/{id}/confirm/` | Acheteur : réception confirmée, fonds versés |
+| POST | `orders/{id}/dispute/` | Acheteur : `{reason}` (10 caractères au moins) |
+| POST | `orders/{id}/cancel/` | Acheteur, avant paiement |
+| GET | `me/orders/` | Mes achats et mes ventes |
+| GET | `payments/commission/?price=` | Commission et montant reçu par le vendeur |
+| POST | `payments/webhooks/fedapay/` | Webhook signé (`X-FEDAPAY-SIGNATURE`), idempotent |
+| POST | `orders/{id}/simulator-settle/` | Développement seulement : valide un paiement simulé resté en attente |
+
+États : `created` → `payment_pending` → `paid_held` → `handed_over` → `released`, avec `disputed` (puis `released` ou `refunded`), `cancelled` et `refunded`. La commission n'est visible que du vendeur. Chaque transition est journalisée (`OrderEvent`). Le simulateur choisit le résultat selon la fin du numéro : `00` refusé, `77` validé après 5 secondes, `99` reste en attente, autre : validé.
+
+Commande planifiée toutes les 15 minutes : `manage.py release_due_orders` (libération 48 h après la remise sans réaction de l'acheteur, annulation des commandes non payées après 30 minutes). Les litiges se tranchent dans l'admin Django, « Commandes » : verser au vendeur ou rembourser l'acheteur. Le filtre `secure_payment=1` ne garde que les annonces qui acceptent le paiement sécurisé.
