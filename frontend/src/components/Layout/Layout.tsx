@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { searchTarget } from '@/lib/searchTarget'
 import { useAuth } from '@/features/auth/AuthContext'
+import { CompareBar } from '@/features/compare/CompareBar'
 import styles from './Layout.module.css'
 
 function SearchForm() {
@@ -65,6 +66,7 @@ export function Layout() {
       <main className={styles.main}>
         <Outlet />
       </main>
+      <CompareBar />
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <p>TechKoin · Appareils neufs et d'occasion au Bénin.</p>

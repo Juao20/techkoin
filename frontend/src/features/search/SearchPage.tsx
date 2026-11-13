@@ -8,6 +8,8 @@ import { ListingCard } from '@/components/ListingCard/ListingCard'
 import { api } from '@/lib/api'
 import { toCard } from '@/lib/listings'
 import type { ListingCardApi, Page } from '@/lib/types'
+import { useToast } from '@/components/Toast/Toast'
+import { useCompare } from '@/features/compare/CompareContext'
 import { FilterPanel } from './FilterPanel'
 import { SmartSearch } from './SmartSearch'
 import {
@@ -24,6 +26,8 @@ const PAGE_SIZE = 24
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams()
+  const compare = useCompare()
+  const { notify } = useToast()
   const filters = useMemo(() => parseFilters(params), [params])
   const [panelOpen, setPanelOpen] = useState(false)
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -155,7 +159,15 @@ export default function SearchPage() {
             >
               {data.results.map((l) => (
                 <li key={l.id}>
-                  <ListingCard listing={toCard(l)} />
+                  <ListingCard
+                    listing={toCard(l)}
+                    compared={compare.has(l.id)}
+                    onCompareChange={(checked) => {
+                      if (!compare.toggle(l.id) && checked) {
+                        notify('Vous pouvez comparer 3 annonces au maximum.')
+                      }
+                    }}
+                  />
                 </li>
               ))}
             </ul>

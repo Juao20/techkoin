@@ -1,0 +1,112 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-h2);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  max-width: 640px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--fs-small);
+  color: var(--ink-2);
+}
+.field select,
+.field input {
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-body);
+}
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 70ch;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.verdict p {
+  margin: 0;
+}
+
+.h2 {
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+
+.winner a {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.list,
+.warnings {
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style: disc;
+}
+.warnings {
+  color: var(--red);
+}
+
+.notice {
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.card {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.card h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-body);
+}
+.card p {
+  margin: 0 0 var(--space-1);
+}
+.card a {
+  color: var(--ink);
+}
+.price {
+  font-family: var(--font-mono);
+  color: var(--green);
+  font-size: 20px;
+}
+
+@media (min-width: 768px) {
+  .options {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
