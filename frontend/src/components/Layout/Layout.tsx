@@ -79,6 +79,9 @@ export function Layout() {
             <Link to="/securite">Conseils de sécurité</Link>
             <Link to="/appareil-vole">Déclarer un appareil volé</Link>
             <Link to="/recherche">Toutes les annonces</Link>
+            <Link to="/a-propos">À propos</Link>
+            <Link to="/cgu">Conditions d’utilisation</Link>
+            <Link to="/confidentialite">Confidentialité</Link>
           </nav>
         </div>
       </footer>

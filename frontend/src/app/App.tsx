@@ -24,6 +24,14 @@ const ShopPage = lazy(() => import('../features/shop/ShopPage'))
 const AccountPage = lazy(() => import('../features/account/AccountPage'))
 const SafetyPage = lazy(() => import('../features/pages/SafetyPage'))
 
+const LegalPages = {
+  about: lazy(() => import('../features/pages/LegalPages').then((m) => ({ default: m.AboutPage }))),
+  terms: lazy(() => import('../features/pages/LegalPages').then((m) => ({ default: m.TermsPage }))),
+  privacy: lazy(() =>
+    import('../features/pages/LegalPages').then((m) => ({ default: m.PrivacyPage })),
+  ),
+}
+
 const StolenReportPage = lazy(() => import('../features/trust/StolenReportPage'))
 
 const ComparePage = lazy(() => import('../features/compare/ComparePage'))
@@ -61,6 +69,9 @@ export function App() {
                     <Route path="/boutique/:slug" element={<ShopPage />} />
                     <Route path="/compte" element={<AccountPage />} />
                     <Route path="/securite" element={<SafetyPage />} />
+                    <Route path="/a-propos" element={<LegalPages.about />} />
+                    <Route path="/cgu" element={<LegalPages.terms />} />
+                    <Route path="/confidentialite" element={<LegalPages.privacy />} />
                     <Route path="/comparer" element={<ComparePage />} />
                     <Route path="/commande/:id" element={<OrderPage />} />
                     <Route path="/pro" element={<ProLayout />}>
