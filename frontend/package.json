@@ -16,7 +16,8 @@
     "screenshots:phase1": "node scripts/screenshot-phase1.mjs",
     "screenshots:phase2": "node scripts/screenshot-phase2.mjs",
     "screenshots:phase3": "node scripts/screenshot-phase3.mjs",
-    "screenshots:phase4": "node scripts/screenshot-phase4.mjs"
+    "screenshots:phase4": "node scripts/screenshot-phase4.mjs",
+    "screenshots:phase5": "node scripts/screenshot-phase5.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

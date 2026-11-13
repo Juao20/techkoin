@@ -343,6 +343,9 @@ button.navLink[aria-current='page'] {
 .after {
   background: var(--green-tint);
 }
+.after:only-child {
+  grid-column: 1 / -1;
+}
 .label {
   font-size: var(--fs-micro);
   font-weight: 600;
@@ -421,5 +424,9 @@ button.navLink[aria-current='page'] {
   .row {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto;
     align-items: center;
+  }
+  .row > .compare,
+  .row > .actions:last-child {
+    grid-column: 1 / -1;
   }
 }
