@@ -156,6 +156,15 @@ GROQ_MODEL_SMART = os.environ.get("GROQ_MODEL_SMART", "llama-3.3-70b-versatile")
 GROQ_MODEL_FAST = os.environ.get("GROQ_MODEL_FAST", "llama-3.1-8b-instant")
 GROQ_MODEL_STT = os.environ.get("GROQ_MODEL_STT", "whisper-large-v3")
 AI_TIMEOUT_SECONDS = int(os.environ.get("AI_TIMEOUT_SECONDS", "15"))
+AI_COMPARE_TIMEOUT_SECONDS = float(os.environ.get("AI_COMPARE_TIMEOUT_SECONDS", "2.5"))
+# Hourly limits per feature: (visitor, signed in). Section 10.1.
+AI_LIMITS = {
+    "search": (20, 40),
+    "compare": (5, 10),
+    "assistant": (10, 20),
+    "describe": (30, 30),
+    "voice": (20, 20),
+}
 
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TechKoin <no-reply@techkoin.bj>")
