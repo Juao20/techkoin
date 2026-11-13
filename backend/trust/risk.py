@@ -83,4 +83,19 @@ def evaluate(listing, imei_status: str) -> tuple[int, dict[str, int]]:
         rules["custom_model"] = RULE_POINTS["custom_model"]
     if imei_status == "duplicate":
         rules["duplicate_imei"] = RULE_POINTS["duplicate_imei"]
+    points, signals = _ai_signal(listing)
+    if points:
+        rules["ai_signal"] = points
+    listing.moderation_flags = {**listing.moderation_flags, "ai_signals": signals}
     return min(100, sum(rules.values())), rules
+
+
+def _ai_signal(listing) -> tuple[int, list[str]]:
+    """0 to 25 points from the language model; never raises and never blocks on its own."""
+    try:
+        from ai.risk import signal
+
+        result = signal(listing)
+        return result.risk, result.signals
+    except Exception:  # the rule engine must keep working when the AI layer cannot
+        return 0, []
