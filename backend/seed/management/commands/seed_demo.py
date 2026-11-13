@@ -415,7 +415,10 @@ class Command(BaseCommand):
             # Price far below the market (+35) and contact details in the text (+20).
             (
                 "price",
-                {"price_fcfa": max(15_000, int(base.price_fcfa * 0.35)), "description": contact},
+                {
+                    "price_fcfa": max(15_000, int((base.estimate_mid or base.price_fcfa) * 0.35)),
+                    "description": contact,
+                },
             ),
             # Scam wording (+30) and a phone number in the text (+20).
             ("phrase", {"description": f"Envoie d'abord l'argent, pas de rencontre. {contact}"}),
