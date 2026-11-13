@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "marketplace",
     "trust",
     "payments",
+    "insights",
     "analytics",
     "ai",
     "pricing",
