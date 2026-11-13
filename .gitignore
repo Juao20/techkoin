@@ -33,6 +33,6 @@ Thumbs.db
 .vscode/
 
 # Local tool state
-.claude/settings.local.json
+.claude
 frontend/test-results/
 frontend/playwright-report/
