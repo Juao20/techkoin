@@ -20,6 +20,7 @@ from django.utils.text import slugify
 from PIL import Image, ImageDraw
 
 from accounts.models import Shop, User
+from ai import describe
 from analytics.models import Event
 from catalog.models import City, DeviceModel
 from marketplace import services
@@ -274,7 +275,10 @@ class Command(BaseCommand):
         for i in range(total):
             by_shop = i % 100 < 55
             if by_shop:
-                shop = rng.choice(shops)
+                # The Pro demo shop (shops[0]) gets a full catalogue to analyse: 16 of the first
+                # shop listings are its own, all for sale.
+                own = sum(1 for x in listings if x.shop_id == shops[0].pk)
+                shop = shops[0] if own < 16 and rng.random() < 0.45 else rng.choice(shops)
                 seller = shop.owner
             else:
                 shop = None
@@ -310,8 +314,11 @@ class Command(BaseCommand):
         deal = rng.choices([0.80, 1.0, 1.25], [12, 76, 12])[0]  # some bargains, some overpriced
         price = int(round(ref * factor * rng.uniform(0.95, 1.05) * deal, -3))
         city = shop.city if shop else seller.city
-        published = timezone.now() - timedelta(days=rng.randint(0, 85), hours=rng.randint(0, 23))
         status = rng.choices(["active", "sold", "archived"], [88, 8, 4])[0]
+        if shop is not None and shop.owner.email.startswith("boutique.pro@"):
+            status = "active"
+        # Online for a while: the dormant-stock diagnosis needs listings older than 14 days.
+        published = timezone.now() - timedelta(days=rng.randint(2, 80), hours=rng.randint(0, 23))
 
         listing = Listing(
             seller=seller,
@@ -370,13 +377,19 @@ class Command(BaseCommand):
         listing.imei_hash = hash_identifier(listing.imei_or_serial)
         listing.imei_status = "ok"
         listing.save()
-        self.add_photos(listing, with_defect=grade == "C")
+        if rng.random() < 0.6:  # the rest keep an empty description, a typical weakness
+            text = describe.fallback_text(listing, describe.facts(listing))  # never the network
+            words = text.description.split()
+            listing.description = " ".join(words[: rng.choice([28, 55, 90, len(words)])])
+            listing.save(update_fields=["description"])
+        self.add_photos(listing, with_defect=grade == "C", extra=2 if rng.random() < 0.5 else 0)
         return listing
 
-    def add_photos(self, listing, with_defect=False, copy_of=None):
+    def add_photos(self, listing, with_defect=False, copy_of=None, extra=0):
         """Placeholder photos. `copy_of` reuses another listing's images (same perceptual hash)."""
         source = copy_of or listing
-        kinds = ["front", "back", "screen_on"] + (["defect"] if with_defect else []) + ["other"]
+        kinds = ["front", "back", "screen_on"] + (["defect"] if with_defect else [])
+        kinds += ["other"] * (1 + extra)
         for position, kind in enumerate(kinds):
             image, thumb, phash = process_upload(
                 placeholder_photo(source.title, kind, source.pk * 10 + position)
@@ -476,6 +489,38 @@ class Command(BaseCommand):
 
     # --------------------------------------------------------------- events
 
+    def plant_demand(self, now, days) -> int:
+        """A rising demand the Pro radar must find: buyers in Cotonou look for a MacBook M1 under
+        400 000 FCFA, and almost none is on sale. Same shape as the events the site records."""
+        rng = self.rng
+        total = 0
+        for offset in range(min(days, 29), -1, -1):
+            per_day = 14 if offset < 7 else 5  # the last week is much busier than the weeks before
+            moment = (now - timedelta(days=offset)).replace(hour=15, minute=0, second=0)
+            batch = []
+            for _ in range(per_day + rng.randint(0, 2)):
+                no_result = rng.random() < 0.7
+                batch.append(
+                    Event(
+                        type="search_no_result" if no_result else "search",
+                        session_id=f"demo{rng.getrandbits(48):012x}",
+                        query_text="macbook m1",
+                        filters={
+                            "q": "macbook m1",
+                            "price_max": str(rng.choice([350_000, 400_000])),
+                            "city": "cotonou",
+                        },
+                        city="cotonou",
+                        results_count=0 if no_result else rng.randint(1, 3),
+                    )
+                )
+            created = Event.objects.bulk_create(batch)
+            Event.objects.filter(pk__in=[e.pk for e in created]).update(
+                created_at=moment, updated_at=moment
+            )
+            total += len(batch)
+        return total
+
     def create_events(self, listings, individuals, days):
         rng = self.rng
         live = [x for x in listings if x.status == "active"]
@@ -563,6 +608,8 @@ class Command(BaseCommand):
                 favorites_count=counts["favorite_add"],
             )
         self.stdout.write(f"  {total} événements sur {days} jours")
+        planted = self.plant_demand(now, days)
+        self.stdout.write(f"  {planted} recherches « macbook m1 » à Cotonou (radar de la demande)")
 
         fan = individuals[0]
         for listing in rng.sample(live, min(5, len(live))):
