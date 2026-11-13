@@ -4,8 +4,8 @@ from django.core.management import call_command
 from accounts.models import Shop, User
 from analytics.models import Event
 from marketplace.models import Listing, ListingPhoto
-from payments.models import Order
 from marketplace.services import validate_for_publish
+from payments.models import Order
 
 
 @pytest.mark.django_db
