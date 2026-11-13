@@ -182,6 +182,12 @@ AI_LIMITS = {
 
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TechKoin <no-reply@techkoin.bj>")
+# SMTP (used when EMAIL_BACKEND is django.core.mail.backends.smtp.EmailBackend).
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
 
 # Price estimation (section 7.1): coefficients bring comparables to a "grade B used" equivalent.
 PRICING_COEFFS = {

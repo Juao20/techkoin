@@ -8,4 +8,4 @@ pydantic>=2.9
 django-cors-headers>=4.7
 cryptography>=44
 python-dotenv>=1.0
-dj-database-url>=2.3
+dj-database-url>=2.3psycopg[binary]>=3.2
