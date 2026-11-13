@@ -11,7 +11,7 @@ test('la recherche intelligente transforme une phrase en filtres modifiables', a
   await expect(page.getByText('Compris :')).toBeVisible()
   await expect(page).toHaveURL(/category=laptop/)
   await expect(page).toHaveURL(/price_max=250000/)
-  await expect(page).toHaveURL(/usage=dev/)
+  await expect(page).toHaveURL(/usage(=|%3A)dev/)
   await expect(page).toHaveURL(/city=abomey-calavi/)
 
   await page.getByRole('button', { name: /Retirer max/ }).click()
@@ -110,3 +110,22 @@ test('la dictée est masquée sans clé et la rédaction assistée fonctionne', 
   await expect(page.getByLabel(/Description/)).toHaveValue(/iPhone 13/, { timeout: 10_000 })
   await expect(page.getByLabel(/Description/)).toHaveValue(/128/)
 })
+
+for (const wish of [
+  'pc pas cher',
+  'pc gamer',
+  'pc premium',
+  'pc de bureau',
+  'téléphone pas cher',
+]) {
+  test(`« ${wish} » trouve des annonces et explique ce qui a été compris`, async ({ page }) => {
+    await page.goto('/recherche')
+    await page.getByLabel('Décrivez ce que vous cherchez').fill(wish)
+    await page.getByRole('button', { name: 'Chercher' }).click()
+    await expect(page.getByText('Compris :')).toBeVisible()
+    await expect(page.locator('article').first()).toBeVisible()
+    const count = await page.getByLabel('Annonces', { exact: false }).count()
+    expect(count).toBeGreaterThanOrEqual(0)
+    await expect(page.getByText(/^[1-9]\d* annonces?$/)).toBeVisible()
+  })
+}
