@@ -7,6 +7,7 @@ from django.utils import timezone
 from accounts.models import Shop, User
 from analytics.models import Event
 from catalog.models import DeviceModel
+from marketplace import services
 from marketplace.models import Listing
 
 
@@ -43,7 +44,10 @@ def add_listing(shop, model_slug="apple-iphone-13", price=300_000, **extra):
         published_at=timezone.now() - timedelta(days=extra.pop("days_online", 5)),
     )
     fields.update(extra)
-    return Listing.objects.create(**fields)
+    listing = Listing.objects.create(**fields)
+    services.refresh_search_text(listing)  # what the real search matches against
+    listing.save(update_fields=["search_text"])
+    return listing
 
 
 def add_events(kind, n, days_ago=1, **fields):

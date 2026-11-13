@@ -172,6 +172,10 @@ AI_LIMITS = {
     "assistant": (10, 20),
     "describe": (30, 30),
     "voice": (20, 20),
+    # Shop analysis (Pro): a few calls per page load, so the hourly allowance is higher.
+    "insights": (120, 120),
+    "insights_chat": (60, 60),
+    "insights_bulk": (20, 20),
 }
 
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
