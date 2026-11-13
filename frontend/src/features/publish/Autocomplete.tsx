@@ -65,7 +65,8 @@ export function Autocomplete<T>({
           />
         )}
       </Field>
-      {open && data && data.length > 0 && (
+      {/* Hide the list while the debounced query is behind the text: it would be stale. */}
+      {open && q === text && data && data.length > 0 && (
         <ul id={listId} role="listbox" className={styles.list}>
           {data.map((item, i) => (
             <li key={i} role="option" aria-selected={false}>
