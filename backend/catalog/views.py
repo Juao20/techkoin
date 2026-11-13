@@ -4,6 +4,7 @@ from django.views.decorators.cache import cache_control
 from rest_framework import generics
 
 from .models import Brand, City, DeviceModel, GraphicsCard, Processor
+from .search import find_models
 from .serializers import (
     BrandSerializer,
     CitySerializer,
@@ -66,27 +67,8 @@ class DeviceModelList(NoPagination, generics.ListAPIView):
     serializer_class = DeviceModelListSerializer
 
     def get_queryset(self):
-        qs = DeviceModel.objects.filter(is_active=True).select_related("brand")
-        category = self.request.query_params.get("category")
-        if category:
-            qs = qs.filter(category=category)
-        q = self.request.query_params.get("q", "").strip().lower()
-        if not q:
-            return qs[:10]
-        compact = q.replace(" ", "")
-        matches = []
-        for m in qs:
-            haystack = f"{m.brand.name} {m.name}".lower()
-            aliases = [a.lower() for a in m.aliases]
-            if (
-                all(part in haystack for part in q.split())
-                or compact in haystack.replace(" ", "")
-                or any(compact in a.replace(" ", "") for a in aliases)
-            ):
-                matches.append(m)
-            if len(matches) == 10:
-                break
-        return matches
+        params = self.request.query_params
+        return find_models(params.get("q", ""), params.get("category"))
 
 
 class DeviceModelDetail(generics.RetrieveAPIView):
