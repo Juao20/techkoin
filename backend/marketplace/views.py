@@ -14,8 +14,8 @@ from rest_framework.views import APIView
 from analytics.models import Event
 from analytics.tracking import track
 
-from . import services
-from .models import Favorite, Listing, ListingPhoto, ListingReport
+from . import alerts, services
+from .models import Favorite, Listing, ListingPhoto, ListingReport, Notification, SavedSearch
 from .photos import InvalidPhoto, process_upload
 from .search import PAGE_SIZE, search_listings
 from .serializers import (
@@ -409,3 +409,88 @@ class ShopListings(APIView):
         return paginator.get_paginated_response(
             ListingCardSerializer(page, many=True, context=ctx(request)).data
         )
+
+
+class MyAlerts(APIView):
+    """GET/POST me/alerts: the saved searches of the signed-in user."""
+
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def data(alert) -> dict:
+        return {
+            "id": alert.pk,
+            "name": alert.name,
+            "filters": alert.filters,
+            "channel": alert.channel,
+            "is_active": alert.is_active,
+            "last_notified_at": alert.last_notified_at,
+            "created_at": alert.created_at,
+            "url": alerts.search_url(alert.filters),
+        }
+
+    def get(self, request):
+        return Response([self.data(a) for a in SavedSearch.objects.filter(user=request.user)])
+
+    def post(self, request):
+        try:
+            alert = alerts.create(
+                request.user,
+                request.data.get("filters"),
+                str(request.data.get("name", "")),
+                str(request.data.get("channel", "email")),
+            )
+        except alerts.AlertError as exc:
+            return error("invalid_alert", str(exc))
+        return Response(self.data(alert), status=status.HTTP_201_CREATED)
+
+
+class MyAlert(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        alert = get_object_or_404(SavedSearch, pk=pk, user=request.user)
+        if "is_active" in request.data:
+            alert.is_active = bool(request.data["is_active"])
+        if request.data.get("channel") in SavedSearch.Channel.values:
+            alert.channel = request.data["channel"]
+        if str(request.data.get("name", "")).strip():
+            alert.name = str(request.data["name"]).strip()[:120]
+        alert.save()
+        return Response(MyAlerts.data(alert))
+
+    def delete(self, request, pk):
+        get_object_or_404(SavedSearch, pk=pk, user=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MyNotifications(APIView):
+    """GET me/notifications (newest first, with the unread count); POST marks them all read."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        mine = Notification.objects.filter(user=request.user)
+        return Response(
+            {
+                "unread": mine.filter(read_at__isnull=True).count(),
+                "results": [
+                    {
+                        "id": n.pk,
+                        "kind": n.kind,
+                        "title": n.title,
+                        "body": n.body,
+                        "url": n.url,
+                        "read": n.read_at is not None,
+                        "created_at": n.created_at,
+                    }
+                    for n in mine[:50]
+                ],
+            }
+        )
+
+    def post(self, request):
+        Notification.objects.filter(user=request.user, read_at__isnull=True).update(
+            read_at=timezone.now()
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)

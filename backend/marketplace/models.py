@@ -253,3 +253,48 @@ class ListingReport(models.Model):
 
     def __str__(self):
         return f"Signalement {self.get_reason_display()} sur {self.listing_id}"
+
+
+class SavedSearch(models.Model):
+    """A search the user wants to be told about (spec 4.3). Filters use the URL query format."""
+
+    class Channel(models.TextChoices):
+        EMAIL = "email", "E-mail"
+        IN_APP = "in_app", "Notification"
+        WHATSAPP = "whatsapp", "WhatsApp"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="saved_searches"
+    )
+    name = models.CharField(max_length=120)
+    filters = models.JSONField(default=dict)
+    channel = models.CharField(max_length=10, choices=Channel.choices, default=Channel.EMAIL)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class Notification(models.Model):
+    """In-app notification: shown in the account, whatever channel the alert also uses."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+    )
+    kind = models.CharField(max_length=20, default="alert")
+    title = models.CharField(max_length=160)
+    body = models.CharField(max_length=300, blank=True)
+    url = models.CharField(max_length=300, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["user", "read_at"])]
