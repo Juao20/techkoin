@@ -4,7 +4,7 @@ Marketplace de reference au Benin pour acheter et vendre des PC, smartphones et 
 
 Le cahier des charges complet se trouve dans [TECHKOIN_SPEC.md](TECHKOIN_SPEC.md). Les choix pris en cours de route sont dans [docs/DECISIONS.md](docs/DECISIONS.md).
 
-Etat : phase 0 (socle) terminee, en attente de validation.
+Etat : phase 5 (boutiques et analyse IA) terminee, en attente de validation.
 
 ## Installation (Windows, PowerShell)
 
@@ -45,7 +45,7 @@ Captures du styleguide (serveur Vite lance) : `npm --prefix frontend run screens
 .\.venv\Scripts\python.exe backend\manage.py seed_demo            # ajouter --reset pour recreer
 ```
 
-`seed_demo` cree 8 boutiques, 25 particuliers, 150 annonces avec photos generees (images neutres, pas de photos reelles) et 90 jours d'evenements. Les commandes de commande sandbox arriveront avec la phase 4.
+`seed_demo` cree 8 boutiques, 25 particuliers, 150 annonces avec photos generees (images neutres, pas de photos reelles) et 90 jours d'evenements. Le compte Boutique Pro (Cotonou Tech) a 16 annonces et une demande MacBook M1 plantee pour le radar. Les ecrans de la phase 5 comptent les 7 et 30 derniers jours : relancer seed_demo --reset si les donnees ont vieilli.
 
 Mot de passe de tous les comptes : `Demo2026!`
 
@@ -72,7 +72,11 @@ A planifier en production :
 
 Par defaut le simulateur (`PAYMENT_PROVIDER=simulator`). Numeros de test : fin en `00` refuse, `77` valide apres 5 secondes, `99` reste en attente (bouton « Valider le paiement simule » en developpement), tout autre numero est valide. Pour FedaPay : `PAYMENT_PROVIDER=fedapay` et les cles sandbox dans `.env`.
 
-A planifier : `manage.py release_due_orders` toutes les 15 minutes.
+A planifier : `manage.py release_due_orders` toutes les 15 minutes (termine aussi les abonnements Pro echus) et `manage.py send_weekly_reports` chaque lundi a 8 h (heure de Porto-Novo) : rapport hebdomadaire des boutiques Pro par e-mail (console en developpement, SMTP en production via `EMAIL_BACKEND`).
+
+## Tableau de bord boutique
+
+Connexion avec un compte boutique puis "Espace pro" (`/pro`). L'offre Pro coute `PRO_PLAN_PRICE_FCFA` (10 000) par mois, payee avec les memes numeros de test que les commandes. Les routes Pro repondent 403 aux boutiques gratuites ; le plan est controle uniquement par le serveur.
 
 ## Tests de bout en bout
 

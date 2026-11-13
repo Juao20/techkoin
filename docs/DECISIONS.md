@@ -81,7 +81,19 @@ Format : date, question, choix, raison.
 - Les webhooks sont rendus idempotents par un enregistrement `webhook:<fournisseur>:<id d'événement>` ; un horodatage de plus de 5 minutes est refusé.
 - Données de démonstration : 10 commandes sandbox (libérées, en séquestre, remises, en litige, remboursée, annulée, en attente).
 
+## 2026-11-13 : Choix de la phase 5
+
+- Les analyses sont calculées à la demande depuis les événements bruts (index `type, created_at` et `shop, type, created_at`). Les agrégats quotidiens `DailyShopStats` et `DailyDemandStats` de la section 12 ne sont pas créés : ils n'apportent rien à ce volume et dupliqueraient les chiffres du rapport. À ajouter si les requêtes ralentissent.
+- Radar (P1) : le texte tapé est rattaché à une catégorie par le catalogue ; la ville vient de l'événement. Une ville trop mince reste comptée dans la ligne « toutes villes » de la même famille ; la ligne « toutes villes » est omise quand elle répète à l'identique la seule ville. L'offre est comptée avec la même recherche texte que le site.
+- Prix conseillé (P2) : 105 % de l'estimation si le prix la dépasse de plus de 10 %, 97 % s'il est sous elle de plus de 10 % (marge portée à 25 % quand l'estimation repose sur moins de 5 comparables). Le modèle n'écrit que l'explication.
+- Stock dormant (P3) : « médiane » = médiane du taux de contact des annonces actives de la même catégorie. Les corrections de titre et de description sont le texte F2 (déjà contrôlé contre les faits de l'annonce) et le prix de P2 ; le modèle explique, il ne propose pas de chiffre. Cinq corrections au plus par requête.
+- Rapport (P4) : sur les 7 derniers jours, e-mail par un `Notifier` (WhatsApp plus tard = une classe). Sans clé Groq, texte généré par gabarit.
+- Chat (P5) : appel d'outils Groq sur cinq fonctions fermées ; sans clé, ou si le modèle cite un chiffre que les fonctions n'ont pas renvoyé, une lecture par mots-clés choisit la fonction. Les coordonnées tapées dans la question sont retirées avant envoi.
+- Aperçu gratuit : P1 à P3 répondent aux boutiques gratuites avec le premier élément ; P4 à P7 répondent `403`. Le plan en vigueur est `plan = pro` et `plan_expires_at` non échu (sans date : accordé à la main, cas de la démo).
+- Les erreurs DRF (`detail`) sont converties en `{code, message}` pour toute l'API.
+- Données de démonstration : la boutique Pro a 16 annonces en ligne et une demande « macbook m1 » à moins de 400 000 FCFA à Cotonou, plantée sur la dernière semaine. Les écrans datent de `seed_demo` : relancer `seed_demo --reset` si les données ont plus de quelques jours.
 ## A verifier plus tard
 
 - Phase 4 : creer un compte FedaPay sandbox et verifier le parcours complet (paiement, webhook, versement) avec de vraies cles.
 - Phase 3 : tester avec une vraie cle Groq (mode JSON des modeles `openai/gpt-oss-*`, transcription `whisper-large-v3`).
+- Phase 5 : tester P1 à P7 avec une vraie cle Groq (appel d'outils de openai/gpt-oss-120b, JSON des textes) et verifier le paiement d'abonnement FedaPay.

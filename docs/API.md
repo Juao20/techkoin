@@ -121,3 +121,26 @@ Tout est en mode test. Fournisseur choisi par `PAYMENT_PROVIDER` (`simulator` pa
 États : `created` → `payment_pending` → `paid_held` → `handed_over` → `released`, avec `disputed` (puis `released` ou `refunded`), `cancelled` et `refunded`. La commission n'est visible que du vendeur. Chaque transition est journalisée (`OrderEvent`). Le simulateur choisit le résultat selon la fin du numéro : `00` refusé, `77` validé après 5 secondes, `99` reste en attente, autre : validé.
 
 Commande planifiée toutes les 15 minutes : `manage.py release_due_orders` (libération 48 h après la remise sans réaction de l'acheteur, annulation des commandes non payées après 30 minutes). Les litiges se tranchent dans l'admin Django, « Commandes » : verser au vendeur ou rembourser l'acheteur. Le filtre `secure_payment=1` ne garde que les annonces qui acceptent le paiement sécurisé.
+
+## Boutique et analyse (phase 5)
+
+Compte boutique obligatoire (`403` sinon). `IsProShop` est la seule barrière des routes Pro : le front affiche, il ne décide jamais. Les erreurs ont toujours la forme `{code, message, fields?}`, y compris les `403` et `404` de DRF.
+
+| Méthode | Route | Plan | Description |
+|---|---|---|---|
+| GET | `shop/stats/?period=7\|30\|90` | tous | Vues, contacts, favoris, ventes, taux de contact, évolution, série par jour, tableau par annonce |
+| GET | `shop/subscription/` | tous | Plan en vigueur, prix, historique ; règle un paiement en attente |
+| POST | `shop/subscribe/` | tous | `{operator, phone}`. Un mois de Pro, plan actif dès le paiement réussi ; payer à nouveau prolonge d'un mois |
+| POST | `shop/subscription/settle/` | tous | Développement seulement (numéro finissant par 99) |
+| GET | `insights/demand/?period=7\|30` | aperçu | P1 : recherches par (catégorie, modèle, budget, ville) face à l'offre ; segments de 10 recherches au moins ; recommandations (Pro) |
+| GET | `insights/pricing/` | aperçu | P2 : prix, estimation, écart, prix conseillé arrondi à 5 000 FCFA, activité face à la moyenne de la catégorie |
+| GET | `insights/dormant/` | aperçu | P3 : annonces de plus de 14 jours sous la médiane de contact, causes par règles, corrections (Pro) |
+| POST | `insights/listings/{id}/apply/` | Pro | `{price_fcfa?, title?, description?}` : applique un conseil |
+| GET / POST | `insights/reports/` | Pro | P4 : liste ; génération immédiate |
+| GET | `insights/reports/{id}/` | Pro | Détail d'un rapport |
+| POST | `insights/chat/` | Pro | P5 : `{question}` ; réponse calculée par des fonctions prédéfinies limitées à la boutique, jamais de SQL |
+| POST | `insights/bulk-optimize/` | Pro | P6 : `{listing_ids}` (1 à 50) ; propositions avant/après, rien n'est écrit |
+| POST | `insights/bulk-optimize/apply/` | Pro | `{items: [{listing_id, title, description}]}` : n'écrit que ce qui est accepté |
+| GET | `insights/competition/{listing_id}/` | Pro | P7 : les 3 annonces concurrentes les plus proches et les actions conseillées |
+
+« Aperçu » : une boutique gratuite reçoit le premier élément seulement, avec `preview: true`, `total` et `hidden`, sans recommandations ni corrections. Les textes rédigés par le modèle sont rejetés s'ils contiennent un chiffre absent des données (repli sur un texte généré). Commandes planifiées : `send_weekly_reports` (lundi 8 h, heure de Porto-Novo) et `release_due_orders` (toutes les 15 minutes, termine aussi les abonnements échus).
