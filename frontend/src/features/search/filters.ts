@@ -45,6 +45,7 @@ const FLAGS = [
   'stylus',
   'verified',
   'invoice',
+  'secure_payment',
 ] as const
 
 export type SingleKey = (typeof SINGLE)[number]

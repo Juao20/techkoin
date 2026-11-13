@@ -39,6 +39,11 @@ describe('filtres dans l’URL', () => {
     expect(roundTrip('category=laptop&usage=dev')).toContain('usage=dev')
   })
 
+  it('garde le filtre de paiement sécurisé dans l’URL', () => {
+    expect(parse('secure_payment=1').flags.secure_payment).toBe(true)
+    expect(roundTrip('secure_payment=1')).toBe('secure_payment=1')
+  })
+
   it('ne garde pas la page 1 dans l’URL', () => {
     expect(roundTrip('page=1')).toBe('')
   })

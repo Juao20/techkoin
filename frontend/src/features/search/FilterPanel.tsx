@@ -287,6 +287,7 @@ export function FilterPanel({ filters, onChange }: Props) {
         />
         {flag('verified', 'Vendeur vérifié')}
         {flag('invoice', 'Facture fournie')}
+        {flag('secure_payment', 'Paiement sécurisé')}
       </Group>
     </div>
   )
