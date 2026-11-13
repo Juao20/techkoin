@@ -13,6 +13,8 @@ import { OrdersList } from '@/features/orders/OrdersList'
 import { ApiError, api } from '@/lib/api'
 import { toCard } from '@/lib/listings'
 import type { ListingCardApi, User } from '@/lib/types'
+import { AlertsTab } from './AlertsTab'
+import { NotificationsTab, useUnreadCount } from './NotificationsTab'
 import { VerificationTab } from './VerificationTab'
 import styles from './AccountPage.module.css'
 
@@ -196,6 +198,7 @@ function Profile({ user }: { user: User }) {
 export default function AccountPage() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
+  const unread = useUnreadCount(Boolean(user))
   if (loading) return <p>Chargement…</p>
   if (!user) return <Navigate to="/connexion" replace state={{ from: '/compte' }} />
 
@@ -238,6 +241,12 @@ export default function AccountPage() {
         items={[
           { value: 'listings', label: 'Mes annonces', content: <MyListings /> },
           { value: 'favorites', label: 'Favoris', content: <Favorites /> },
+          { value: 'alerts', label: 'Alertes', content: <AlertsTab /> },
+          {
+            value: 'notifications',
+            label: unread > 0 ? `Notifications (${unread})` : 'Notifications',
+            content: <NotificationsTab />,
+          },
           { value: 'orders', label: 'Commandes', content: <OrdersList /> },
           { value: 'profile', label: 'Profil', content: <Profile user={user} /> },
           {

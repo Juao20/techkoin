@@ -10,6 +10,7 @@ import { toCard } from '@/lib/listings'
 import type { ListingCardApi, Page } from '@/lib/types'
 import { useToast } from '@/components/Toast/Toast'
 import { useCompare } from '@/features/compare/CompareContext'
+import { CreateAlert } from './CreateAlert'
 import { FilterPanel } from './FilterPanel'
 import { SmartSearch } from './SmartSearch'
 import {
@@ -81,6 +82,7 @@ export default function SearchPage() {
             <p className={styles.count} aria-live="polite">
               {data ? `${data.count} annonce${data.count > 1 ? 's' : ''}` : ' '}
             </p>
+            <CreateAlert params={params} />
           </div>
           <div className={styles.controls}>
             <Button
