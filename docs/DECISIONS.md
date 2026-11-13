@@ -59,6 +59,17 @@ Format : date, question, choix, raison.
 - Modération : par le Django admin (section 11), file « file de modération » triée par score de risque, avec approbation, refus et demande de modifications. Chaque décision est conservée (`ModerationDecision`).
 - Documents d'identité et de boutique : stockés dans `PRIVATE_MEDIA_ROOT`, jamais servis par `/media`, lus par un modérateur via une route protégée, supprimés 90 jours après la décision (`purge_verification_documents`, à planifier chaque jour).
 
+## 2026-11-13 : Choix de la phase 3
+
+- Modèles Groq : les modèles par défaut de la spécification (llama-3.3-70b-versatile, llama-3.1-8b-instant) figurent sur la page de dépréciation de Groq avec un arrêt au 16/08/2026. Les défauts passent à openai/gpt-oss-120b (smart) et openai/gpt-oss-20b (fast), les remplaçants recommandés ; ils restent modifiables par variables d'environnement. Non testé avec une vraie clé : le mode JSON de ces modèles est à confirmer, et toute réponse invalide retombe sur le repli.
+- Appel à Groq par httpx (API compatible OpenAI) plutôt que par le SDK groq, pour ne pas ajouter de dépendance (règle 0.7).
+- Comparaison : délai de 2,5 s pour le modèle (AI_COMPARE_TIMEOUT_SECONDS), au-delà le verdict déterministe s'affiche. C'est ce qui tient la promesse « moins de 3 s hors cache ».
+- Assistant : seules les questions précédentes de l'acheteur sont renvoyées au modèle (5 au plus), jamais les réponses reçues du navigateur ; le prénom et le nom du vendeur sont retirés des textes libres.
+- Réponses du modèle vérifiées avant affichage : un chiffre absent des données fournies, un gagnant hors comparaison ou une promesse non vérifiable font utiliser le repli.
+- Rédaction assistée : le texte de repli reprend les informations saisies ; il peut compter moins de 80 mots si peu de champs sont remplis.
+- Dictée : sans clé Groq (donc sans transcription), le bouton n'est pas affiché. L'audio est lu en mémoire et n'est jamais enregistré ; Django peut toutefois le placer dans un fichier temporaire au-delà de 2,5 Mo (limite fixée à 3 Mo).
+- Non faits : la requête « compare X et Y » saisie dans la recherche, et l'usage « Pro » (200 requêtes par jour) qui relève de la phase 5.
+
 ## A verifier plus tard
 
-- Phase 3 : disponibilite des modeles Groq par defaut (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `whisper-large-v3`) dans la documentation Groq.
+- Phase 3 : tester avec une vraie cle Groq (mode JSON des modeles `openai/gpt-oss-*`, transcription `whisper-large-v3`).

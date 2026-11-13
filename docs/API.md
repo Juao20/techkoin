@@ -84,3 +84,19 @@ La fiche annonce renvoie `estimate_low` / `estimate_mid` / `estimate_high`, `est
 | GET | `private-files/{kind}/{id}/` | Modérateurs uniquement ; `kind` vaut `identity`, `selfie` ou `shop-document` |
 
 La modération se fait dans le Django admin (`/admin/`) : « file de modération » triée par risque, approbation, refus, demande de modifications ; vérifications d'identité et de boutique ; déclarations d'appareils volés ; signalements. Commande quotidienne : `manage.py purge_verification_documents` (supprime les documents 90 jours après la décision).
+## Intelligence artificielle
+
+Sans `GROQ_API_KEY`, tout fonctionne en mode repli. Limites par heure (visiteur, connecté) : recherche 20/40, comparaison 5/10, assistant 10/20.
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `ai/status/` | `{model_available, voice_available}` |
+| POST | `ai/search/` | F1. `{query}`. Renvoie `{filters, chips, confidence, used_ai}` ; `filters` est directement la query string de la recherche |
+| POST | `ai/describe/` | F2. Connecté, propriétaire. `{listing_id}`. Renvoie `{title, description, highlights, used_ai}` |
+| POST | `ai/voice/` | F3. Connecté. Multipart `audio` (60 s, 3 Mo). Renvoie les champs extraits ou `{available: false}` |
+| POST | `ai/assistant/` | F4. `{listing_id, question, history: [questions]}`. Renvoie `{answer, information_missing, suggested_seller_question, used_ai}` |
+| POST | `ai/compare/` | F5. `{ids: [2 à 3], usage?, budget?}`. Renvoie `{rows, verdict, listings, used_ai}` |
+| GET | `ai/compare/suggestions/?listing_id=` | Deux alternatives choisies par Django |
+| POST | `listings/{id}/whatsapp/` | accepte maintenant `{message}` (300 caractères) pour la question au vendeur |
+
+F6 (anti-arnaque) n'a pas de route : elle ajoute de 0 à 25 points au score de risque à la publication (règle `ai_signal`) et ne bloque jamais seule. Chaque appel est journalisé dans `AIRequestLog` (visible dans l'admin).
