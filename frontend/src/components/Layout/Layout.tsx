@@ -1,6 +1,7 @@
 import { MagnifyingGlass, User as UserIcon } from '@phosphor-icons/react'
 import { useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { searchTarget } from '@/lib/searchTarget'
 import { useAuth } from '@/features/auth/AuthContext'
 import styles from './Layout.module.css'
 
@@ -9,8 +10,7 @@ function SearchForm() {
   const [q, setQ] = useState('')
   function submit(e: FormEvent) {
     e.preventDefault()
-    const term = q.trim()
-    navigate(term ? `/recherche?q=${encodeURIComponent(term)}` : '/recherche')
+    navigate(searchTarget(q))
   }
   return (
     <form className={styles.search} role="search" onSubmit={submit}>

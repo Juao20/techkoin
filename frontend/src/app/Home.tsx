@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ListingCard } from '@/components/ListingCard/ListingCard'
+import { searchTarget } from '@/lib/searchTarget'
 import { api } from '@/lib/api'
 import { CATEGORY_LABELS, toCard } from '@/lib/listings'
 import type { ListingCardApi, Page } from '@/lib/types'
@@ -17,8 +18,7 @@ export function Home() {
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    const term = q.trim()
-    navigate(term ? `/recherche?q=${encodeURIComponent(term)}` : '/recherche')
+    navigate(searchTarget(q))
   }
 
   return (
