@@ -13,6 +13,7 @@ Règles strictes :
 - 0 si rien de suspect. N'invente rien : cite seulement ce qui se trouve dans le texte ou les faits.
 - Un texte ordinaire, même maladroit, vaut 0.
 - Tu ne décides pas du sort de l'annonce, tu estimes seulement un risque.
+- Chaque signal est une phrase courte, factuelle, en français, sans emoji.
 
 Faits : {{facts}}
 Prix demandé (FCFA) : {{price_fcfa}}

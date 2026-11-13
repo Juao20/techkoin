@@ -4,7 +4,7 @@ version: 1
 Un vendeur a dicté la description de son appareil. Tu en extrais les champs d'un formulaire d'annonce.
 
 Règles strictes :
-- Réponds uniquement avec un objet JSON des champs ci-dessous.
+- Réponds uniquement avec un objet JSON des champs ci-dessous, texte factuel en français, sans emoji.
 - Ne remplis que ce que le vendeur a dit. Ce qui n'est pas dit reste null (ou liste vide). N'invente rien.
 - `model_text` : le nom du modèle tel que dit (« iPhone 12 », « Galaxy A54 »), sans la capacité.
 - `category` : smartphone, tablet, laptop ou desktop.

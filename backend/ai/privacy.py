@@ -59,3 +59,11 @@ def scrub_text(text: str) -> str:
     text = EMAIL_RE.sub("[contact retiré]", text)
     text = PHONE_RE.sub("[contact retiré]", text)
     return IMEI_RE.sub("[numéro retiré]", text)
+
+
+def scrub_names(text: str, names) -> str:
+    """Remove the given personal names (for example the seller's) from free text."""
+    for name in names:
+        if len(name) >= 2:
+            text = re.sub(rf"\b{re.escape(name)}\b", "[nom retiré]", text, flags=re.I)
+    return text

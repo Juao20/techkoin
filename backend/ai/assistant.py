@@ -49,22 +49,29 @@ def context(listing: Listing) -> dict:
     }
 
 
-def clean_history(history) -> list[dict]:
+def clean_history(history, names=()) -> list[str]:
+    """Only the buyer's earlier questions are kept: answers sent back by a browser are not
+    trusted, and free text is scrubbed of contact details and of the seller's name."""
     out = []
     for item in (history or [])[-MAX_HISTORY:]:
-        if isinstance(item, dict) and item.get("q") and item.get("a"):
-            out.append(
-                {
-                    "question": privacy.scrub_text(str(item["q"]))[:MAX_QUESTION],
-                    "reponse": privacy.scrub_text(str(item["a"]))[:600],
-                }
-            )
+        question = item.get("q") if isinstance(item, dict) else item
+        if question:
+            text = privacy.scrub_names(privacy.scrub_text(str(question)), names)
+            out.append(text[:MAX_QUESTION])
     return out
 
 
+def seller_names(listing: Listing) -> list[str]:
+    seller = listing.seller
+    return [n for n in (seller.first_name, seller.last_name) if n]
+
+
 def run(listing: Listing, question: str, history=None, user=None) -> dict:
-    question = privacy.scrub_text(" ".join(question.split())[:MAX_QUESTION])
-    history = clean_history(history)
+    names = seller_names(listing)
+    question = privacy.scrub_names(
+        privacy.scrub_text(" ".join(question.split())[:MAX_QUESTION]), names
+    )
+    history = clean_history(history, names)
     ctx = context(listing)
     key = None
     if not history:  # follow-up questions depend on the conversation: only first ones are cached
