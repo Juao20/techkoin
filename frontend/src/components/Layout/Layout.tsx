@@ -55,12 +55,12 @@ export function Layout() {
               </NavLink>
             )}
             {user ? (
-              <NavLink to="/compte" className={styles.account}>
+              <NavLink to="/compte" className={styles.account} aria-label="Mon compte">
                 <UserIcon size={20} aria-hidden />
                 <span className={styles.accountLabel}>{user.first_name}</span>
               </NavLink>
             ) : (
-              <NavLink to="/connexion" className={styles.account}>
+              <NavLink to="/connexion" className={styles.account} aria-label="Connexion">
                 <UserIcon size={20} aria-hidden />
                 <span className={styles.accountLabel}>Connexion</span>
               </NavLink>

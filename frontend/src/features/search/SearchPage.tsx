@@ -95,6 +95,7 @@ export default function SearchPage() {
             <label className={styles.sort}>
               <span className={styles.sortLabel}>Trier par</span>
               <select
+                aria-label="Trier par"
                 className={styles.sortSelect}
                 value={filters.single.sort ?? 'relevance'}
                 onChange={(e) =>
@@ -155,13 +156,15 @@ export default function SearchPage() {
           />
         ) : (
           <>
+            <h2 className={styles.srOnly}>Annonces</h2>
             <ul
               className={view === 'grid' ? styles.grid : styles.list}
               data-stale={isPlaceholderData}
             >
-              {data.results.map((l) => (
+              {data.results.map((l, index) => (
                 <li key={l.id}>
                   <ListingCard
+                    priority={index < 4}
                     listing={toCard(l)}
                     compared={compare.has(l.id)}
                     onCompareChange={(checked) => {

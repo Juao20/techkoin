@@ -29,15 +29,24 @@ type Props = {
   listing: ListingCardData
   compared?: boolean
   onCompareChange?: (checked: boolean) => void
+  /** The first cards of a page are what the visitor sees first: load them at once. */
+  priority?: boolean
 }
 
-export function ListingCard({ listing, compared = false, onCompareChange }: Props) {
+export function ListingCard({ listing, compared = false, onCompareChange, priority }: Props) {
   const badge = listing.priceBadge ? BADGES[listing.priceBadge] : null
   return (
     <article className={styles.card}>
       <div className={styles.photo}>
         {listing.imageUrl && (
-          <img src={listing.imageUrl} alt={listing.title} loading="lazy" width={480} height={360} />
+          <img
+            src={listing.imageUrl}
+            alt={listing.title}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            width={480}
+            height={360}
+          />
         )}
       </div>
       <div className={styles.body}>

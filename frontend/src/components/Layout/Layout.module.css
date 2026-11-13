@@ -137,6 +137,8 @@
 
 .main {
   flex: 1;
+  /* The footer stays below the first screen, so late content never pushes it (layout shift). */
+  min-height: 100vh;
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
