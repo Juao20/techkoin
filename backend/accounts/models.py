@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 from trust.storage import PrivateStorage
 
@@ -87,3 +88,10 @@ class Shop(models.Model):
     @property
     def is_verified(self) -> bool:
         return self.verification_status == User.VerificationStatus.VERIFIED
+
+    @property
+    def is_pro(self) -> bool:
+        """Pro plan in force. No expiry date means a plan granted by hand (demo, admin)."""
+        if self.plan != self.Plan.PRO:
+            return False
+        return self.plan_expires_at is None or self.plan_expires_at > timezone.now()

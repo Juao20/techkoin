@@ -21,6 +21,10 @@ def unique_shop_slug(name: str) -> str:
 
 class ShopSerializer(serializers.ModelSerializer):
     is_verified = serializers.BooleanField(read_only=True)
+    plan = serializers.SerializerMethodField()  # the plan in force, not the stored one
+
+    def get_plan(self, shop) -> str:
+        return "pro" if shop.is_pro else "free"
 
     class Meta:
         model = Shop
