@@ -49,6 +49,11 @@ export function Layout() {
             <NavLink to="/vendre" className={styles.sell}>
               Vendre
             </NavLink>
+            {user?.shop && (
+              <NavLink to="/pro" className={styles.proLink}>
+                Espace pro
+              </NavLink>
+            )}
             {user ? (
               <NavLink to="/compte" className={styles.account}>
                 <UserIcon size={20} aria-hidden />

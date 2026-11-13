@@ -9,9 +9,8 @@ import { Tabs } from '@/components/Tabs/Tabs'
 import { Tag, type TagTone } from '@/components/Tag/Tag'
 import { useToast } from '@/components/Toast/Toast'
 import { useAuth } from '@/features/auth/AuthContext'
+import { OrdersList } from '@/features/orders/OrdersList'
 import { ApiError, api } from '@/lib/api'
-import { STATUS_TONE, type OrderApi } from '@/features/orders/types'
-import { formatFCFA } from '@/lib/format'
 import { toCard } from '@/lib/listings'
 import type { ListingCardApi, User } from '@/lib/types'
 import { VerificationTab } from './VerificationTab'
@@ -89,40 +88,6 @@ function MyListings() {
           </li>
         )
       })}
-    </ul>
-  )
-}
-
-function Orders() {
-  const { data, isPending } = useQuery({
-    queryKey: ['me', 'orders'],
-    queryFn: () => api<OrderApi[]>('me/orders/'),
-  })
-  if (isPending) return <p>Chargement…</p>
-  if (!data || data.length === 0) {
-    return (
-      <EmptyState
-        title="Aucune commande"
-        text="Utilisez « Payer en sécurité » sur une annonce pour acheter avec séquestre."
-        action={<Link to="/recherche?secure_payment=1">Annonces à paiement sécurisé</Link>}
-      />
-    )
-  }
-  return (
-    <ul className={styles.orders}>
-      {data.map((o) => (
-        <li key={o.id} className={styles.order}>
-          <div>
-            <Link to={`/commande/${o.id}`} className={styles.link}>
-              {o.listing.title}
-            </Link>
-            <p className={styles.orderMeta}>
-              {o.role === 'seller' ? 'Vente' : 'Achat'} · {formatFCFA(o.amount_fcfa)}
-            </p>
-          </div>
-          <Tag tone={STATUS_TONE[o.status]}>{o.status_label}</Tag>
-        </li>
-      ))}
     </ul>
   )
 }
@@ -250,6 +215,11 @@ export default function AccountPage() {
           </p>
         </div>
         <div className={styles.headerActions}>
+          {user.shop && (
+            <Link to="/pro" className={styles.link}>
+              Tableau de bord boutique
+            </Link>
+          )}
           <Link to="/vendre" className={styles.sell}>
             Vendre un appareil
           </Link>
@@ -268,7 +238,7 @@ export default function AccountPage() {
         items={[
           { value: 'listings', label: 'Mes annonces', content: <MyListings /> },
           { value: 'favorites', label: 'Favoris', content: <Favorites /> },
-          { value: 'orders', label: 'Commandes', content: <Orders /> },
+          { value: 'orders', label: 'Commandes', content: <OrdersList /> },
           { value: 'profile', label: 'Profil', content: <Profile user={user} /> },
           {
             value: 'verification',

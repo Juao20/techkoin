@@ -71,6 +71,21 @@
   color: var(--green);
 }
 
+.proLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--space-2);
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.proLink:hover,
+.proLink[aria-current='page'] {
+  color: var(--green);
+}
+
 .accountLabel {
   display: none;
 }

@@ -30,6 +30,14 @@ const ComparePage = lazy(() => import('../features/compare/ComparePage'))
 
 const OrderPage = lazy(() => import('../features/orders/OrderPage'))
 
+const ProLayout = lazy(() => import('../features/pro/ProLayout'))
+const ProOverview = lazy(() => import('../features/pro/Overview'))
+const ProListings = lazy(() => import('../features/pro/ListingsTab'))
+const ProAnalysis = lazy(() => import('../features/pro/AnalysisTab'))
+const ProOrders = lazy(() => import('../features/pro/OrdersTab'))
+const ProSubscription = lazy(() => import('../features/pro/SubscriptionTab'))
+const ProSettings = lazy(() => import('../features/pro/SettingsTab'))
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
@@ -55,6 +63,14 @@ export function App() {
                     <Route path="/securite" element={<SafetyPage />} />
                     <Route path="/comparer" element={<ComparePage />} />
                     <Route path="/commande/:id" element={<OrderPage />} />
+                    <Route path="/pro" element={<ProLayout />}>
+                      <Route index element={<ProOverview />} />
+                      <Route path="annonces" element={<ProListings />} />
+                      <Route path="analyse" element={<ProAnalysis />} />
+                      <Route path="commandes" element={<ProOrders />} />
+                      <Route path="abonnement" element={<ProSubscription />} />
+                      <Route path="parametres" element={<ProSettings />} />
+                    </Route>
                     <Route path="/appareil-vole" element={<StolenReportPage />} />
                     <Route path="/connexion" element={<LoginPage />} />
                     <Route path="/inscription" element={<RegisterPage />} />
