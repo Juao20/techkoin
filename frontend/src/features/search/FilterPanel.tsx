@@ -1,14 +1,17 @@
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/Button/Button'
 import { Checkbox, Radio } from '@/components/Choice/Choice'
 import { Field } from '@/components/Field/Field'
 import fieldStyles from '@/components/Field/Field.module.css'
+import { api } from '@/lib/api'
 import { useBrands, useCities } from '@/lib/catalog'
 import { CATEGORY_LABELS, CONDITION_LABELS } from '@/lib/listings'
 import { MOBILE_USAGES, PC_USAGES, USAGE_LABELS } from '@/lib/usage'
 import {
   clearFilters,
   countActive,
+  serializeFilters,
   withFlag,
   withList,
   withSingle,
@@ -19,6 +22,30 @@ import {
 import styles from './FilterPanel.module.css'
 
 type Props = { filters: Filters; onChange: (next: Filters) => void }
+
+type Facets = {
+  category: Record<string, number>
+  brand: Record<string, number>
+  condition: Record<string, number>
+  grade: Record<string, number>
+  seller_type: Record<string, number>
+  flags: Record<string, number>
+}
+
+/** Counters next to each option: what the search would return if that option were chosen. */
+function useFacets(filters: Filters) {
+  const params = serializeFilters(filters)
+  params.delete('sort')
+  return useQuery({
+    queryKey: ['facets', params.toString()],
+    queryFn: () => api<Facets>('listings/facets/', { query: Object.fromEntries(params) }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  }).data
+}
+
+const count = (label: string, n: number | undefined) =>
+  n === undefined ? label : `${label} (${n})`
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -71,6 +98,7 @@ const STORAGE = [64, 128, 256, 512, 1024].map((v) => ({
 
 export function FilterPanel({ filters, onChange }: Props) {
   const cities = useCities()
+  const facets = useFacets(filters)
   const category = filters.single.category ?? ''
   const brands = useBrands(category || undefined)
   const isComputer = category === 'laptop' || category === 'desktop'
@@ -78,7 +106,7 @@ export function FilterPanel({ filters, onChange }: Props) {
   const flag = (key: FlagKey, label: string) => (
     <Checkbox
       key={key}
-      label={label}
+      label={count(label, facets?.flags[key])}
       checked={Boolean(filters.flags[key])}
       onChange={(e) => onChange(withFlag(filters, key, e.target.checked))}
     />
@@ -107,7 +135,7 @@ export function FilterPanel({ filters, onChange }: Props) {
           <Radio
             key={value}
             name="category"
-            label={label}
+            label={count(label, facets?.category[value])}
             checked={category === value}
             onChange={() => onChange(withSingle(filters, 'category', value))}
           />
@@ -151,7 +179,7 @@ export function FilterPanel({ filters, onChange }: Props) {
         {Object.entries(CONDITION_LABELS).map(([value, label]) => (
           <Checkbox
             key={value}
-            label={label}
+            label={count(label, facets?.condition[value])}
             checked={(filters.lists.condition ?? []).includes(value)}
             onChange={(e) => onChange(withList(filters, 'condition', value, e.target.checked))}
           />
@@ -166,7 +194,7 @@ export function FilterPanel({ filters, onChange }: Props) {
         ].map(([value, label]) => (
           <Checkbox
             key={value}
-            label={label ?? value ?? ''}
+            label={count(label ?? value ?? '', facets?.grade[value ?? ''])}
             checked={(filters.lists.grade ?? []).includes(value ?? '')}
             onChange={(e) => onChange(withList(filters, 'grade', value ?? '', e.target.checked))}
           />
@@ -177,7 +205,7 @@ export function FilterPanel({ filters, onChange }: Props) {
         {(brands.data ?? []).map((b) => (
           <Checkbox
             key={b.slug}
-            label={b.name}
+            label={count(b.name, facets?.brand[b.slug])}
             checked={(filters.lists.brand ?? []).includes(b.slug)}
             onChange={(e) => onChange(withList(filters, 'brand', b.slug, e.target.checked))}
           />
@@ -273,8 +301,8 @@ export function FilterPanel({ filters, onChange }: Props) {
           filters={filters}
           name="seller_type"
           options={[
-            { value: 'shop', label: 'Boutiques' },
-            { value: 'individual', label: 'Particuliers' },
+            { value: 'shop', label: count('Boutiques', facets?.seller_type.shop) },
+            { value: 'individual', label: count('Particuliers', facets?.seller_type.individual) },
           ]}
           onChange={onChange}
         />
