@@ -29,6 +29,7 @@ CATEGORY_WORDS = [
             "ordinateur portable",
             "laptop",
             "macbook",
+            "mac",
             "thinkpad",
             "pc",
             "ordi",
@@ -58,6 +59,7 @@ BRAND_ALIASES = {
     "iphone": "apple",
     "ipad": "apple",
     "macbook": "apple",
+    "mac": "apple",
     "galaxy": "samsung",
     "thinkpad": "lenovo",
     "latitude": "dell",
@@ -192,7 +194,7 @@ def parse_amounts(text: str) -> tuple[int | None, int | None, list[tuple[int, in
         raw[0] = (raw[0][0], raw[1][1], raw[0][2], raw[0][3])
     for number, suffix, start, end in raw:
         value = _to_int(number, suffix)
-        if value is not None and value >= 1_000:
+        if value is not None and 1_000 <= value <= 100_000_000:
             found.append((value, start, end))
     if not found:
         return None, None, spans
@@ -292,7 +294,11 @@ def parse(
         value = int(m.group(1)) * (1024 if m.group(2) in ("to", "tb", "tera", "teras") else 1)
         tag = m.group(4)
         before = t[max(0, m.start() - 12) : m.start()]
-        if tag in ("ram", "memoire"):
+        if value > 16384 or (tag in ("ram", "memoire") and value > 256):
+            continue  # not a real size
+        if tag in ("ssd", "stockage", "disque", "rom") and value < 64:
+            intent.ram_min = value  # "16 go ssd": too small to be a drive
+        elif tag in ("ram", "memoire"):
             intent.ram_min = value
         elif tag in ("ssd", "stockage", "disque", "rom"):
             intent.storage_min = value
@@ -302,6 +308,8 @@ def parse(
             intent.storage_min = value
         elif value <= 32:
             intent.ram_min = value
+    if intent.ram_min and intent.ram_min > 256:
+        intent.ram_min = None  # not a real amount of memory
     hits += bool(intent.ram_min or intent.storage_min)
 
     # Usage.
@@ -330,7 +338,15 @@ def parse(
     hits += bool(intent.keyboard)
 
     # What is left and names a device model becomes a text search.
-    consumed = set(intent.brands) | {"pc", "ordi", "portable", "telephone", "smartphone", "fixe"}
+    consumed = set(intent.brands) | {
+        "pc",
+        "ordi",
+        "portable",
+        "telephone",
+        "smartphone",
+        "fixe",
+        "mac",
+    }
     leftover = re.sub(r"\d+\s*(?:go|gb|giga|gigas|to|tb|teras?)\b", " ", t)
     previous_was_model = False
     for token in re.findall(r"[a-z0-9]+", leftover):

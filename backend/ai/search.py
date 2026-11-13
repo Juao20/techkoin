@@ -190,8 +190,45 @@ def tier_bounds(category: str | None) -> tuple[int, int] | None:
     return _round(prices[len(prices) // 3]), _round(prices[2 * len(prices) // 3])
 
 
-def refine(intent: SearchIntent, params: dict[str, str]) -> tuple[dict, list[dict], list[str]]:
-    """Return (params, chips replacing the raw ones, notes shown to the user)."""
+# What is let go, in this order, when the whole request matches nothing: the budget that came
+# from a wish, then the condition, the city, the memory sizes, and last the amounts typed.
+RELAX_STEPS = [
+    ("le budget « {tier} »", ["price_min", "price_max"], "tier"),
+    ("l'état demandé", ["condition", "grade"], None),
+    ("la ville", ["city"], None),
+    ("la mémoire et le stockage demandés", ["ram_min", "storage_min"], None),
+    ("le budget", ["price_min", "price_max"], None),
+]
+
+
+def relax(intent: SearchIntent, params: dict, extra: list[dict], notes: list[str]):
+    """Drop constraints one by one until something is found, and say what was dropped."""
+    dropped: set[str] = set()
+    live = [Listing.Status.ACTIVE, Listing.Status.RESERVED]
+    if not Listing.objects.filter(status__in=live).exists():
+        return params, extra, dropped  # an empty marketplace: nothing to loosen towards
+    for label, keys, only in RELAX_STEPS:
+        if search_listings({k: v for k, v in params.items() if k != "usage"}).exists():
+            break
+        if only == "tier" and not (intent.tier and not (intent.price_min or intent.price_max)):
+            continue
+        present = [k for k in keys if k in params]
+        if not present:
+            continue
+        for key in present:
+            params.pop(key)
+        dropped |= set(present)
+        notes.append(
+            "Aucune annonce ne correspond à toute la demande : j'ai retiré "
+            + label.format(tier=TIER_LABEL.get(intent.tier or "", ""))
+            + "."
+        )
+    extra[:] = [c for c in extra if not dropped & set(c["keys"])]
+    return params, extra, dropped
+
+
+def refine(intent: SearchIntent, params: dict[str, str]) -> tuple[dict, list[dict], list[str], set]:
+    """Return (params, chips replacing the raw ones, notes shown to the user, dropped keys)."""
     params = dict(params)
     extra: list[dict] = []
     notes: list[str] = []
@@ -218,6 +255,7 @@ def refine(intent: SearchIntent, params: dict[str, str]) -> tuple[dict, list[dic
                 params["price_min"], params["sort"] = str(high), "price_desc"
                 extra.append({"keys": ["price_min", "sort"], "label": f"{label}, dès {fcfa(high)}"})
 
+    params, extra, dropped = relax(intent, params, extra, notes)
     baseline = {k: v for k, v in params.items() if k != "usage"}
     if intent.usage and not search_listings(baseline).exists():
         # Nothing matches the rest of the request anyway: keep the plain usage filter.
@@ -255,7 +293,7 @@ def refine(intent: SearchIntent, params: dict[str, str]) -> tuple[dict, list[dic
                 f"Aucun appareil n'est noté 5 sur 10 pour {name} : "
                 "voici les mieux classés pour cet usage."
             )
-    return params, extra, notes
+    return params, extra, notes, dropped
 
 
 def run(query: str, user=None) -> dict:
@@ -284,11 +322,11 @@ def run(query: str, user=None) -> dict:
         user=user,
     )
     intent = sanitize(result.value)
-    params, extra_chips, notes = refine(intent, to_params(intent))
+    params, extra_chips, notes, dropped = refine(intent, to_params(intent))
     replaced = {"usage"} if intent.usage else set()
     if intent.tier and not (intent.price_min or intent.price_max):
         replaced |= {"price_min", "price_max"}
-    raw_chips = [c for c in chips(intent) if not replaced & set(c["keys"])]
+    raw_chips = [c for c in chips(intent) if not (replaced | dropped) & set(c["keys"])]
     payload = {
         "query": query,
         "filters": params,

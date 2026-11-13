@@ -161,3 +161,28 @@ def test_the_usage_rank_sort_works_from_the_listing_endpoint(stock):
     assert body["count"] == 10
     bad = APIClient().get("/api/listings/?sort=usage:nope")
     assert bad.status_code == 200
+
+
+def test_a_request_that_matches_nothing_loosens_itself_and_says_so(stock):
+    payload, found = results("pc pas cher neuf à Parakou")
+    assert found, "something must come back"
+    assert "city" not in payload["filters"] and "condition" not in payload["filters"]
+    assert any("retiré" in n for n in payload["notes"])
+    assert not any("Parakou" in c["label"] for c in payload["chips"])
+
+
+def test_a_wish_is_not_loosened_when_it_already_matches(stock):
+    payload, found = results("pc premium")
+    assert found and payload["notes"] == []
+
+
+def test_absurd_amounts_and_sizes_are_ignored(stock):
+    assert fallback_intent("pc 99999999999999999999").price_max is None
+    assert fallback_intent("pc 2 to ram 9000 go").ram_min is None
+    assert fallback_intent("pc portable 16go ssd").ram_min == 16
+    assert fallback_intent("pc portable 16go ssd").storage_min is None
+
+
+def test_mac_means_an_apple_laptop(stock):
+    i = fallback_intent("mac pas cher")
+    assert i.category == "laptop" and i.brands == ["apple"] and i.other_terms == []
