@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from analytics.models import Event
 from analytics.tracking import track
 
-from . import alerts, services
+from . import alerts, facets, services
 from .models import Favorite, Listing, ListingPhoto, ListingReport, Notification, SavedSearch
 from .photos import InvalidPhoto, process_upload
 from .search import PAGE_SIZE, search_listings
@@ -409,6 +409,15 @@ class ShopListings(APIView):
         return paginator.get_paginated_response(
             ListingCardSerializer(page, many=True, context=ctx(request)).data
         )
+
+
+class ListingFacets(APIView):
+    """GET listings/facets: the counters next to each filter, for the current search."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(facets.facets(request.query_params))
 
 
 class MyAlerts(APIView):

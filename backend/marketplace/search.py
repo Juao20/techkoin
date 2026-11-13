@@ -114,6 +114,8 @@ def apply_filters(qs: QuerySet, params) -> QuerySet:
         qs = qs.filter(shop__isnull=True)
     if flag(params, "warranty"):
         qs = qs.filter(warranty_months__gt=0)
+    elif (v := to_int(params, "warranty")) is not None:
+        qs = qs.filter(warranty_months__gte=v)
     if flag(params, "invoice"):
         qs = qs.filter(has_invoice=True)
     if usage := params.get("usage"):
