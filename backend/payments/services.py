@@ -238,6 +238,7 @@ def handle_webhook(event) -> bool:
         # The webhook itself is remembered through a marker row carrying the idempotency key.
         Transaction.objects.create(
             order=tx.order,
+            subscription=tx.subscription,
             provider=tx.provider,
             direction="in",
             amount_fcfa=0,
@@ -246,8 +247,14 @@ def handle_webhook(event) -> bool:
             raw_payload=event.raw,
             idempotency_key=key,
         )
+        result = ProviderResult(event.status, event.reference, event.raw)
+        if tx.subscription_id:
+            from . import subscriptions
+
+            subscriptions.apply_result(tx.subscription, tx, result)
+            return True
         order = Order.objects.select_for_update().get(pk=tx.order_id)
-        _apply_result(order, tx, ProviderResult(event.status, event.reference, event.raw))
+        _apply_result(order, tx, result)
     return True
 
 

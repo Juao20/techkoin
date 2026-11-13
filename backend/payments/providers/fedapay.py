@@ -77,11 +77,17 @@ class FedaPayProvider(PaymentProvider):
                 "POST",
                 "/transactions",
                 json={
-                    "description": f"Commande TechKoin {order.pk}",
+                    "description": getattr(
+                        order, "provider_description", f"Commande TechKoin {order.pk}"
+                    ),
                     "amount": order.amount_fcfa,
                     "currency": {"iso": "XOF"},
-                    "callback_url": f"{settings.SITE_URL}/commande/{order.pk}",
-                    "custom_metadata": {"order_id": order.pk, "operator": operator},
+                    "callback_url": settings.SITE_URL
+                    + getattr(order, "callback_path", f"/commande/{order.pk}"),
+                    "custom_metadata": {
+                        ("subscription_id" if hasattr(order, "shop") else "order_id"): order.pk,
+                        "operator": operator,
+                    },
                     "customer": {"phone_number": {"number": _digits(phone), "country": "bj"}},
                 },
             )

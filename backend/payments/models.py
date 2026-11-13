@@ -69,6 +69,42 @@ class OrderEvent(models.Model):
         ordering = ["created_at", "id"]
 
 
+class Subscription(models.Model):
+    """One month of the Pro plan, paid through a Transaction (spec 9.3). No escrow."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Paiement en cours"
+        ACTIVE = "active", "Active"
+        FAILED = "failed", "Échouée"
+        EXPIRED = "expired", "Terminée"
+
+    shop = models.ForeignKey(
+        "accounts.Shop", on_delete=models.CASCADE, related_name="subscriptions"
+    )
+    amount_fcfa = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    is_sandbox = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Abonnement Pro {self.pk} ({self.shop})"
+
+    # What a provider needs to know about the thing being paid for.
+    @property
+    def provider_description(self) -> str:
+        return f"Abonnement Pro TechKoin {self.pk}"
+
+    @property
+    def callback_path(self) -> str:
+        return "/pro/abonnement"
+
+
 class Transaction(models.Model):
     class Provider(models.TextChoices):
         SIMULATOR = "simulator", "Simulateur"
@@ -91,6 +127,13 @@ class Transaction(models.Model):
 
     order = models.ForeignKey(
         Order, null=True, blank=True, on_delete=models.PROTECT, related_name="transactions"
+    )
+    subscription = models.ForeignKey(
+        Subscription,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="transactions",
     )
     provider = models.CharField(max_length=12, choices=Provider.choices)
     operator = models.CharField(max_length=10, choices=Operator.choices, blank=True)

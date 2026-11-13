@@ -6,11 +6,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import HasShop
 from accounts.phone import normalize_phone
 from marketplace.models import Listing
 
-from . import services
-from .models import Order, Transaction
+from . import services, subscriptions
+from .models import Order, Subscription, Transaction
 from .providers import get_provider
 from .providers.base import InvalidSignature
 from .services import InvalidTransition, OrderError
@@ -307,6 +308,96 @@ class Webhook(APIView):
         if event is not None:
             services.handle_webhook(event)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    checkout_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Subscription
+        fields = [
+            "id",
+            "status",
+            "status_label",
+            "amount_fcfa",
+            "starts_at",
+            "ends_at",
+            "is_sandbox",
+            "created_at",
+            "checkout_url",
+        ]
+
+    def get_checkout_url(self, sub) -> str:
+        if sub.status != Subscription.Status.PENDING:
+            return ""
+        tx = sub.transactions.filter(direction="in").first()
+        return (tx.raw_payload or {}).get("checkout_url", "") if tx else ""
+
+
+def subscription_state(shop, sub=None) -> dict:
+    sub = sub or subscriptions.latest(shop)
+    return {
+        "plan": "pro" if shop.is_pro else "free",
+        "plan_expires_at": shop.plan_expires_at,
+        "price_fcfa": settings.PRO_PLAN_PRICE_FCFA,
+        "is_sandbox": True,
+        "latest": SubscriptionSerializer(sub).data if sub else None,
+        "history": SubscriptionSerializer(shop.subscriptions.all()[:12], many=True).data,
+    }
+
+
+class ShopSubscription(APIView):
+    """GET the plan and the payment history; also settles a delayed sandbox payment."""
+
+    permission_classes = [HasShop]
+
+    def get(self, request):
+        subscriptions.refresh_pending(request.shop)
+        return Response(subscription_state(request.shop))
+
+
+class ShopSubscribe(APIView):
+    """POST shop/subscribe: pay one month of Pro. The plan changes as soon as the payment succeeds."""
+
+    permission_classes = [HasShop]
+    throttle_scope = "payments"
+
+    @guarded
+    def post(self, request):
+        phone = normalize_phone(str(request.data.get("phone", "")))
+        if not phone:
+            return error(
+                "invalid_phone",
+                "Numéro invalide.",
+                fields={
+                    "phone": "Saisissez un numéro béninois valide, par exemple 01 97 00 00 00."
+                },
+            )
+        sub = subscriptions.start(
+            request.shop,
+            str(request.data.get("operator", "")),
+            phone,
+            request.headers.get("Idempotency-Key"),
+        )
+        request.shop.refresh_from_db()
+        return Response(subscription_state(request.shop, sub), status=status.HTTP_201_CREATED)
+
+
+class SubscriptionSettle(APIView):
+    """Development only: settles a simulated subscription left pending (number ending 99)."""
+
+    permission_classes = [HasShop]
+
+    def post(self, request):
+        if not (settings.DEBUG and settings.PAYMENT_PROVIDER == "simulator"):
+            return error("not_available", "Indisponible.", status.HTTP_404_NOT_FOUND)
+        for sub in request.shop.subscriptions.filter(status=Subscription.Status.PENDING):
+            for tx in sub.transactions.filter(direction="in", status=Transaction.Status.PENDING):
+                tx.raw_payload = {**tx.raw_payload, "settled": True}
+                tx.save(update_fields=["raw_payload", "updated_at"])
+        subscriptions.refresh_pending(request.shop)
+        return Response(subscription_state(request.shop))
 
 
 class SimulatorSettle(APIView):
