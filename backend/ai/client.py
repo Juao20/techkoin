@@ -154,6 +154,131 @@ def complete[T: BaseModel](
     return use_fallback(last_error, input_tokens=input_tokens, output_tokens=output_tokens)
 
 
+def _post_chat(messages, model: str, timeout: float, tools: list[dict]) -> tuple[dict, int, int]:
+    with http_client(timeout) as client:
+        response = client.post(
+            f"{GROQ_URL}/chat/completions",
+            headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
+            json={
+                "model": model,
+                "messages": messages,
+                "tools": tools,
+                "tool_choice": "auto",
+                "temperature": 0.1,
+            },
+        )
+    response.raise_for_status()
+    body = response.json()
+    usage = body.get("usage", {})
+    return (
+        body["choices"][0]["message"],
+        usage.get("prompt_tokens", 0),
+        usage.get("completion_tokens", 0),
+    )
+
+
+def chat_with_tools(
+    feature: str,
+    system: str,
+    question: str,
+    tools: list[dict],
+    run_tool: Callable[[str, dict], dict],
+    *,
+    user=None,
+    shop=None,
+    max_rounds: int = 4,
+    timeout: float | None = None,
+    history: list[dict] | None = None,
+) -> tuple[str, list[dict]] | None:
+    """Let the model call predefined functions (never SQL) and answer from their results.
+
+    `run_tool(name, arguments)` executes a function that is already restricted to the signed-in
+    shop. Returns (answer, calls) with calls = [{name, arguments, result}], or None when the model
+    is unavailable, so that the caller can fall back to a deterministic answer.
+    """
+    if not has_key():
+        _log(feature, user, shop, success=True, fallback_used=True, error="no_key")
+        return None
+    started = time.monotonic()
+    name = model_name("smart")
+    messages = [{"role": "system", "content": system}, *(history or [])]
+    messages.append({"role": "user", "content": question})
+    calls: list[dict] = []
+    tokens_in = tokens_out = 0
+
+    def fail(error: str):
+        _log(
+            feature,
+            user,
+            shop,
+            model=name,
+            success=False,
+            fallback_used=True,
+            error=error[:300],
+            input_tokens=tokens_in,
+            output_tokens=tokens_out,
+            latency_ms=int((time.monotonic() - started) * 1000),
+        )
+        return None
+
+    try:
+        for _ in range(max_rounds):
+            privacy.check(messages)
+            message, tin, tout = _post_chat(
+                messages, name, timeout or settings.AI_TIMEOUT_SECONDS, tools
+            )
+            tokens_in += tin
+            tokens_out += tout
+            requested = message.get("tool_calls") or []
+            if not requested:
+                answer = (message.get("content") or "").strip()
+                if not answer:
+                    return fail("empty_answer")
+                _log(
+                    feature,
+                    user,
+                    shop,
+                    model=name,
+                    success=True,
+                    fallback_used=False,
+                    input_tokens=tokens_in,
+                    output_tokens=tokens_out,
+                    latency_ms=int((time.monotonic() - started) * 1000),
+                )
+                return answer, calls
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": message.get("content") or "",
+                    "tool_calls": requested,
+                }
+            )
+            for call in requested:
+                fn = call["function"]
+                try:
+                    arguments = json.loads(fn.get("arguments") or "{}")
+                    result = run_tool(fn["name"], arguments)
+                except (ValueError, TypeError, KeyError) as exc:
+                    arguments, result = {}, {"error": f"appel invalide : {exc}"}
+                calls.append({"name": fn["name"], "arguments": arguments, "result": result})
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": call["id"],
+                        "content": json.dumps(result, ensure_ascii=False, default=str),
+                    }
+                )
+        return fail("too_many_rounds")
+    except privacy.PersonalDataError as exc:
+        return fail(f"privacy: {exc}")
+    except (httpx.TimeoutException, httpx.TransportError) as exc:
+        return fail(f"network: {type(exc).__name__}")
+    except httpx.HTTPStatusError as exc:
+        return fail(f"http_{exc.response.status_code}")
+    except (json.JSONDecodeError, KeyError, IndexError, ValueError) as exc:
+        return fail(f"{type(exc).__name__}: {exc}")
+
+
 def transcribe(audio: bytes, filename: str, content_type: str, user=None) -> str | None:
     """Speech to text with Whisper. Returns None when unavailable; the audio is never stored."""
     started = time.monotonic()
