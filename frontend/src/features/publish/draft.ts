@@ -31,6 +31,7 @@ export type Draft = {
   stylus_included: boolean
   price_fcfa: string
   negotiable: boolean
+  accepts_secure_payment: boolean
   city: string
   quartier: string
   accessories: string[]
@@ -69,6 +70,7 @@ export const EMPTY_DRAFT: Draft = {
   stylus_included: false,
   price_fcfa: '',
   negotiable: false,
+  accepts_secure_payment: true,
   city: '',
   quartier: '',
   accessories: [],
@@ -94,6 +96,7 @@ export function toPayload(d: Draft): Record<string, unknown> {
     condition_type: d.condition_type,
     grade: isNew(d) ? '' : d.grade,
     negotiable: d.negotiable,
+    accepts_secure_payment: d.accepts_secure_payment,
     accessories: d.accessories,
   }
   if (d.category) p.category = d.category
@@ -172,6 +175,7 @@ export function fromListing(l: ListingDetailApi): Draft {
     stylus_included: l.stylus_included,
     price_fcfa: l.price_fcfa ? String(l.price_fcfa) : '',
     negotiable: l.negotiable,
+    accepts_secure_payment: l.accepts_secure_payment,
     city: l.city,
     quartier: l.quartier,
     accessories: l.accessories,

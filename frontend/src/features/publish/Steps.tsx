@@ -591,6 +591,34 @@ function LiveEstimate({ draft, price }: { draft: Draft; price: number }) {
   )
 }
 
+/** What the escrow costs the seller, shown before publishing (spec 9.2). */
+function LiveCommission({ price }: { price: number }) {
+  const debounced = useDebounced(price, 400)
+  const { data } = useQuery({
+    queryKey: ['commission', debounced],
+    queryFn: () =>
+      api<{ commission_fcfa: number; payout_fcfa: number; pct: number }>('payments/commission/', {
+        query: { price: debounced },
+      }),
+    enabled: debounced > 0,
+    staleTime: 60_000,
+  })
+  if (!data || debounced <= 0) {
+    return (
+      <p className={styles.hint}>
+        En cas de paiement sécurisé, TechKoin prélève une commission sur le prix, payée par le
+        vendeur.
+      </p>
+    )
+  }
+  return (
+    <p className={styles.hint} role="status">
+      Si l’acheteur paie en sécurité : commission {formatFCFA(data.commission_fcfa)} ({data.pct} %,
+      minimum 500 FCFA). Vous recevez {formatFCFA(data.payout_fcfa)}.
+    </p>
+  )
+}
+
 export function StepPrice({
   draft,
   patch,
@@ -618,6 +646,12 @@ export function StepPrice({
         checked={draft.negotiable}
         onChange={(e) => patch({ negotiable: e.target.checked })}
       />
+      <Checkbox
+        label="Accepter le paiement sécurisé (séquestre Mobile Money)"
+        checked={draft.accepts_secure_payment}
+        onChange={(e) => patch({ accepts_secure_payment: e.target.checked })}
+      />
+      {draft.accepts_secure_payment && <LiveCommission price={price} />}
       <Textarea
         label="Description (facultatif)"
         hint="Historique, raison de la vente, ce qui est inclus."
