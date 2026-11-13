@@ -271,8 +271,11 @@ class WhatsAppLink(APIView):
     def post(self, request, pk):
         listing = get_object_or_404(Listing, pk=pk, status=Listing.Status.ACTIVE)
         number = contact_number(listing).lstrip("+")
+        asked = " ".join(str(request.data.get("message", "")).split())[:300]
         message = (
-            f"Bonjour, votre annonce « {listing.title} » sur TechKoin "
+            f"Bonjour, à propos de votre annonce « {listing.title} » sur TechKoin : {asked}"
+            if asked
+            else f"Bonjour, votre annonce « {listing.title} » sur TechKoin "
             "est-elle toujours disponible ?"
         )
         track(Event.Type.WHATSAPP_CLICK, request, listing=listing)

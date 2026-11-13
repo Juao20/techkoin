@@ -8,7 +8,7 @@ from analytics.models import Event
 from analytics.tracking import track
 from marketplace.models import Listing
 
-from . import client, describe, search, voice
+from . import assistant, client, describe, search, voice
 from .throttles import FeatureThrottle
 
 
@@ -75,6 +75,30 @@ class VoiceView(APIView):
         return Response(
             voice.run(data, upload.name or "audio.webm", upload.content_type, user=request.user)
         )
+
+
+class AssistantView(APIView):
+    """F4, « Assistant acheteur »."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [FeatureThrottle]
+    ai_feature = "assistant"
+
+    def post(self, request):
+        question = str(request.data.get("question", "")).strip()
+        if len(question) < 3:
+            return Response(
+                {"code": "empty_question", "message": "Posez votre question sur l'annonce."}, 400
+            )
+        listing = get_object_or_404(
+            Listing.objects.select_related("shop", "seller", "processor", "gpu", "brand"),
+            pk=request.data.get("listing_id") or 0,
+            status__in=[Listing.Status.ACTIVE, Listing.Status.RESERVED, Listing.Status.SOLD],
+        )
+        user = request.user if request.user.is_authenticated else None
+        payload = assistant.run(listing, question, request.data.get("history"), user=user)
+        track(Event.Type.AI_ASSISTANT_QUESTION, request, listing=listing, query_text=question[:200])
+        return Response(payload)
 
 
 class AIStatus(APIView):
