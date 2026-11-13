@@ -4,6 +4,7 @@ from django.core.management import call_command
 from accounts.models import Shop, User
 from analytics.models import Event
 from marketplace.models import Listing, ListingPhoto
+from payments.models import Order
 from marketplace.services import validate_for_publish
 
 
@@ -26,6 +27,9 @@ def test_seed_demo_creates_publishable_listings_and_is_idempotent():
     stolen = queue.get(imei_status="reported_stolen")  # blocked and handled first
     assert stolen.moderation_flags["priority"] is True and stolen.risk_score == 100
     assert all(listing.risk_score >= 40 for listing in queue)
+
+    assert Order.objects.count() >= 8  # sandbox orders in every state
+    assert {o.status for o in Order.objects.all()} >= {"released", "paid_held", "disputed"}
 
     users_before = User.objects.count()
     call_command("seed_demo", listings=34, days=3)

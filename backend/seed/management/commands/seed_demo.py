@@ -13,7 +13,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
+from django.test.utils import override_settings
 from django.utils import timezone
 from django.utils.text import slugify
 from PIL import Image, ImageDraw
@@ -24,6 +25,8 @@ from catalog.models import City, DeviceModel
 from marketplace import services
 from marketplace.models import Favorite, Listing, ListingPhoto
 from marketplace.photos import process_upload
+from payments import services as payments
+from payments.models import Order, Transaction
 from pricing.services import recompute_listing
 from trust.imei import hash_identifier
 from trust.models import StolenDeviceReport
@@ -160,6 +163,7 @@ class Command(BaseCommand):
         for listing in listings:  # estimates need every listing to exist first
             recompute_listing(listing)
         self.create_suspicious(listings, individuals)
+        self.create_orders(listings, individuals)
         self.create_events(listings, individuals, opts["days"])
         self.print_accounts()
 
@@ -172,6 +176,9 @@ class Command(BaseCommand):
         Event.objects.filter(user__in=demo_users).delete()
         Event.objects.filter(session_id__startswith="demo").delete()
         StolenDeviceReport.objects.filter(police_reference__startswith="PV-2026-").delete()
+        orders = Order.objects.filter(Q(buyer__in=demo_users) | Q(seller__in=demo_users))
+        Transaction.objects.filter(order__in=orders).delete()
+        orders.delete()
         demo_users.delete()
         self.stdout.write("Données de démonstration supprimées.")
 
@@ -561,6 +568,51 @@ class Command(BaseCommand):
                 Listing.objects.filter(pk=listing.pk).update(
                     favorites_count=F("favorites_count") + 1
                 )
+
+    # --------------------------------------------------------------- orders
+
+    def create_orders(self, listings, individuals):
+        """Ten sandbox orders in every state, bought mostly by the demo individual account."""
+        rng = self.rng
+        buyers = individuals[:5]
+        free = [x for x in listings if x.status == "active" and x.accepts_secure_payment]
+        rng.shuffle(free)
+        plan = ["released"] * 3 + ["paid_held"] * 2 + ["handed_over", "disputed", "refunded"]
+        plan += ["cancelled", "payment_pending"]
+        phone = "01 97 00 00 12"
+        made = 0
+        with override_settings(PAYMENT_PROVIDER="simulator"):
+            for target in plan:
+                listing = next((x for x in free if x.seller_id != buyers[made % 5].pk), None)
+                if listing is None:
+                    break
+                free.remove(listing)
+                buyer = buyers[0] if made < 6 else buyers[made % 5]
+                if listing.seller_id == buyer.pk:
+                    buyer = buyers[1]
+                listing.refresh_from_db()
+                order = payments.create_order(buyer, listing, "meetup", "Remise à Cotonou")
+                if target == "cancelled":
+                    payments.cancel(order, buyer)
+                elif target == "payment_pending":
+                    payments.start_payment(order, "mtn", "01 97 00 00 99")
+                else:
+                    order = payments.start_payment(
+                        order, rng.choice(["mtn", "moov", "celtiis"]), phone
+                    )
+                    if target in ("released", "handed_over", "disputed", "refunded"):
+                        if target != "disputed" and target != "refunded":
+                            order = payments.mark_handed_over(order, order.seller)
+                        if target == "released":
+                            payments.buyer_confirm(order, buyer)
+                        if target in ("disputed", "refunded"):
+                            order = payments.open_dispute(
+                                order, buyer, "L'appareil ne correspond pas à l'annonce"
+                            )
+                            if target == "refunded":
+                                payments.resolve_dispute(order, individuals[-1], "refund")
+                made += 1
+        self.stdout.write(f"  {made} commandes sandbox")
 
     def print_accounts(self):
         self.stdout.write(self.style.SUCCESS("Données de démonstration créées."))
