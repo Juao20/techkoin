@@ -70,6 +70,7 @@ class ListingCardSerializer(serializers.ModelSerializer):
             "status",
             "favorited",
             "rejection_reason",
+            "accepts_secure_payment",
         ]
 
     def get_specs(self, obj):
@@ -207,6 +208,7 @@ class ListingWriteSerializer(serializers.ModelSerializer):
             "accessories",
             "warranty_months",
             "provenance",
+            "accepts_secure_payment",
             "imei_or_serial",
             "ram_gb",
             "storage_gb",

@@ -25,6 +25,13 @@ def new_session_id() -> str:
     return uuid.uuid4().hex
 
 
+def record(event_type: str, *, user=None, listing=None, shop=None, **data) -> Event:
+    """Record an event that happens outside a browser request (webhook, scheduled command)."""
+    if shop is None and listing is not None:
+        shop = listing.shop
+    return Event.objects.create(type=event_type, user=user, listing=listing, shop=shop, **data)
+
+
 def track(event_type: str, request, **data) -> Event | None:
     """Record an event. Returns None for bots and for repeated views within 30 minutes."""
     if is_bot(request):

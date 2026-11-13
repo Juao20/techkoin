@@ -119,7 +119,8 @@ def apply_filters(qs: QuerySet, params) -> QuerySet:
     if usage := params.get("usage"):
         # Advised usage: a score of 7 or more (see pricing/usage.py).
         qs = qs.filter(**{f"usage_scores__{usage}__gte": 7})
-    # `secure_payment` is accepted in the URL but only takes effect once escrow exists (phase 4).
+    if flag(params, "secure_payment"):
+        qs = qs.filter(accepts_secure_payment=True)
     return qs
 
 

@@ -95,6 +95,7 @@ class Listing(models.Model):
 
     # Identification (never exposed publicly)
     imei_or_serial = EncryptedTextField(blank=True)
+    accepts_secure_payment = models.BooleanField(default=True)
     imei_hash = models.CharField(max_length=64, blank=True, db_index=True, editable=False)
     imei_status = models.CharField(
         max_length=20, choices=ImeiStatus.choices, default=ImeiStatus.UNCHECKED

@@ -131,6 +131,7 @@ REST_FRAMEWORK = {
         "reveal": "60/hour",
         "estimate": "300/hour",
         "report": "30/hour",
+        "payments": "60/hour",
     },
 }
 
@@ -148,7 +149,12 @@ ESCROW_COMMISSION_PCT = float(os.environ.get("ESCROW_COMMISSION_PCT", "3"))
 ESCROW_COMMISSION_MIN_FCFA = int(os.environ.get("ESCROW_COMMISSION_MIN_FCFA", "500"))
 ESCROW_AUTO_RELEASE_HOURS = int(os.environ.get("ESCROW_AUTO_RELEASE_HOURS", "48"))
 PRO_PLAN_PRICE_FCFA = int(os.environ.get("PRO_PLAN_PRICE_FCFA", "10000"))
-PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "simulator")
+PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "simulator")  # simulator | fedapay
+PAYMENT_PENDING_MINUTES = int(os.environ.get("PAYMENT_PENDING_MINUTES", "30"))
+FEDAPAY_SECRET_KEY = os.environ.get("FEDAPAY_SECRET_KEY", "")
+FEDAPAY_PUBLIC_KEY = os.environ.get("FEDAPAY_PUBLIC_KEY", "")
+FEDAPAY_WEBHOOK_SECRET = os.environ.get("FEDAPAY_WEBHOOK_SECRET", "")
+FEDAPAY_ENV = os.environ.get("FEDAPAY_ENV", "sandbox")
 
 # AI (Groq). Without a key, every feature runs in deterministic fallback mode.
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
