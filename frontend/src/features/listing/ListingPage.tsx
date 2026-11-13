@@ -15,6 +15,7 @@ import { formatFCFA } from '@/lib/format'
 import { timeAgo, toCard } from '@/lib/listings'
 import type { ListingCardApi, ListingDetailApi } from '@/lib/types'
 import { AssistantPanel } from './AssistantPanel'
+import { BuyButton } from './BuyButton'
 import { CompareSuggestions } from './CompareSuggestions'
 import { MarketInsight } from './MarketInsight'
 import { ReportDialog } from './ReportDialog'
@@ -151,6 +152,7 @@ export default function ListingPage() {
             {l.quartier ? `, ${l.quartier}` : ''} · {timeAgo(l.published_at)}
           </p>
 
+          {!sold && <BuyButton listing={l} />}
           {!sold && (
             <div className={styles.contact}>
               <Button

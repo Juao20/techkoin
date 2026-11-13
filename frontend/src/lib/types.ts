@@ -55,6 +55,7 @@ export type ListingCardApi = {
   status: string
   favorited: boolean
   rejection_reason: string
+  accepts_secure_payment: boolean
 }
 
 export type Photo = { id: number; image: string; thumb: string; kind: string; position: number }

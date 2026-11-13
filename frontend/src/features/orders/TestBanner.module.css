@@ -1,0 +1,9 @@
+.banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--yellow-tint);
+  border: 1px solid var(--yellow);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-size: var(--fs-small);
+}

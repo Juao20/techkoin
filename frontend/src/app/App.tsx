@@ -28,6 +28,8 @@ const StolenReportPage = lazy(() => import('../features/trust/StolenReportPage')
 
 const ComparePage = lazy(() => import('../features/compare/ComparePage'))
 
+const OrderPage = lazy(() => import('../features/orders/OrderPage'))
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
@@ -52,6 +54,7 @@ export function App() {
                     <Route path="/compte" element={<AccountPage />} />
                     <Route path="/securite" element={<SafetyPage />} />
                     <Route path="/comparer" element={<ComparePage />} />
+                    <Route path="/commande/:id" element={<OrderPage />} />
                     <Route path="/appareil-vole" element={<StolenReportPage />} />
                     <Route path="/connexion" element={<LoginPage />} />
                     <Route path="/inscription" element={<RegisterPage />} />
