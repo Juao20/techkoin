@@ -358,7 +358,7 @@ class ShopSubscription(APIView):
 
 
 class ShopSubscribe(APIView):
-    """POST shop/subscribe: pay one month of Pro. The plan changes as soon as the payment succeeds."""
+    """POST shop/subscribe: pay one month of Pro; the plan changes when the payment succeeds."""
 
     permission_classes = [HasShop]
     throttle_scope = "payments"
