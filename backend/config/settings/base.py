@@ -152,8 +152,8 @@ PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "simulator")
 
 # AI (Groq). Without a key, every feature runs in deterministic fallback mode.
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODEL_SMART = os.environ.get("GROQ_MODEL_SMART", "llama-3.3-70b-versatile")
-GROQ_MODEL_FAST = os.environ.get("GROQ_MODEL_FAST", "llama-3.1-8b-instant")
+GROQ_MODEL_SMART = os.environ.get("GROQ_MODEL_SMART", "openai/gpt-oss-120b")
+GROQ_MODEL_FAST = os.environ.get("GROQ_MODEL_FAST", "openai/gpt-oss-20b")
 GROQ_MODEL_STT = os.environ.get("GROQ_MODEL_STT", "whisper-large-v3")
 AI_TIMEOUT_SECONDS = int(os.environ.get("AI_TIMEOUT_SECONDS", "15"))
 AI_COMPARE_TIMEOUT_SECONDS = float(os.environ.get("AI_COMPARE_TIMEOUT_SECONDS", "2.5"))

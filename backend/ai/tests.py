@@ -81,12 +81,12 @@ def test_without_a_key_the_fallback_answers_and_is_logged(db, settings):
     assert log.prompt_version == "3"
 
 
-def test_a_valid_answer_is_used_and_logged_with_tokens(db, groq):
+def test_a_valid_answer_is_used_and_logged_with_tokens(db, groq, settings):
     groq.replies = [ok({"label": "ok", "score": 9})]
     result = call()
     assert not result.fallback_used and result.value == Answer(label="ok", score=9)
     sent = groq.requests[0]
-    assert sent["model"] == "llama-3.1-8b-instant"
+    assert sent["model"] == settings.GROQ_MODEL_FAST
     assert sent["response_format"] == {"type": "json_object"}
     assert "Décris un PC." in sent["messages"][1]["content"]
     log = AIRequestLog.objects.get()
