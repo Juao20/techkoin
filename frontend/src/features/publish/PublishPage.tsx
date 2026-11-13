@@ -17,6 +17,7 @@ import {
   StepReview,
   StepSpecs,
 } from './Steps'
+import { filledLabels, voiceToDraft } from './voice'
 import styles from './PublishPage.module.css'
 
 const STEPS = ['Appareil', 'État', 'Détails', 'Photos', 'Prix', 'Remise en main', 'Publier']
@@ -87,6 +88,9 @@ function Wizard({
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
+  const [voiceSummary, setVoiceSummary] = useState<string[]>([])
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggestedByAi, setSuggestedByAi] = useState(false)
 
   const patch = (p: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...p }))
@@ -185,6 +189,34 @@ function Wizard({
     }
   }
 
+  /** Dictation: pre-fills the form; the seller validates it step by step. */
+  function applyVoice(result: Parameters<typeof voiceToDraft>[0]) {
+    const filled = voiceToDraft(result, draft)
+    patch(filled)
+    setVoiceSummary(filledLabels(filled))
+    if (Object.keys(filled).length === 0)
+      notify('Rien de précis n’a été reconnu. Réessayez ou saisissez à la main.')
+  }
+
+  /** « Rédaction assistée »: saves the draft first so the text is written from what is entered. */
+  async function suggestDescription() {
+    setSuggesting(true)
+    try {
+      const saved = await save()
+      if (!saved) return
+      const text = await api<{ description: string; used_ai: boolean }>('ai/describe/', {
+        method: 'POST',
+        body: { listing_id: saved },
+      })
+      patch({ description: text.description })
+      setSuggestedByAi(text.used_ai)
+    } catch (e) {
+      notify(e instanceof ApiError ? e.message : 'La rédaction n’a pas abouti.')
+    } finally {
+      setSuggesting(false)
+    }
+  }
+
   const props = { draft, patch, errors }
   const last = step === STEPS.length
 
@@ -200,13 +232,20 @@ function Wizard({
         }}
       >
         <h2 className={styles.stepTitle}>{STEPS[step - 1]}</h2>
-        {step === 1 && <StepDevice {...props} />}
+        {step === 1 && <StepDevice {...props} onVoice={applyVoice} voiceSummary={voiceSummary} />}
         {step === 2 && <StepCondition {...props} />}
         {step === 3 && <StepSpecs {...props} />}
         {step === 4 && listingId && (
           <StepPhotos {...props} photos={photos} listingId={listingId} onPhotosChange={setPhotos} />
         )}
-        {step === 5 && <StepPrice {...props} />}
+        {step === 5 && (
+          <StepPrice
+            {...props}
+            onSuggest={() => void suggestDescription()}
+            suggesting={suggesting}
+            suggestedByAi={suggestedByAi}
+          />
+        )}
         {step === 6 && <StepHandover {...props} />}
         {step === 7 && <StepReview {...props} photos={photos} />}
 

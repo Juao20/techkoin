@@ -12,11 +12,13 @@ import { useBrands, useCities } from '@/lib/catalog'
 import { formatFCFA } from '@/lib/format'
 import { CATEGORY_LABELS, CONDITION_LABELS } from '@/lib/listings'
 import type { Category, Photo } from '@/lib/types'
+import { AUTO_NOTICE, type VoiceResult } from '@/lib/ai'
 import { BADGES } from '@/lib/usage'
 import { useDebounced } from '@/lib/useDebounced'
 import { Autocomplete } from './Autocomplete'
 import { isComputer, isMobile, isNew, type Draft } from './draft'
 import { proposeGrade, type GradeAnswers, type Wear } from './grade'
+import { VoiceRecorder } from './VoiceRecorder'
 import { resizeImage } from './image'
 import styles from './Steps.module.css'
 
@@ -50,7 +52,16 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 /* ---------- 1. Appareil ---------- */
 
-export function StepDevice({ draft, patch, errors }: StepProps) {
+export function StepDevice({
+  draft,
+  patch,
+  errors,
+  onVoice,
+  voiceSummary,
+}: StepProps & {
+  onVoice?: (result: Extract<VoiceResult, { available: true }>) => void
+  voiceSummary?: string[]
+}) {
   const brands = useBrands(draft.category || undefined)
   const [custom, setCustom] = useState(Boolean(draft.custom_model_name))
 
@@ -80,6 +91,12 @@ export function StepDevice({ draft, patch, errors }: StepProps) {
 
   return (
     <>
+      {onVoice && <VoiceRecorder onResult={onVoice} />}
+      {voiceSummary && voiceSummary.length > 0 && (
+        <p className={styles.hint} role="status">
+          Pré-rempli d’après votre dictée : {voiceSummary.join(', ')}. Vérifiez chaque étape.
+        </p>
+      )}
       <Group title="Que vendez-vous ?">
         <div className={styles.tiles}>
           {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
@@ -574,7 +591,14 @@ function LiveEstimate({ draft, price }: { draft: Draft; price: number }) {
   )
 }
 
-export function StepPrice({ draft, patch, errors }: StepProps) {
+export function StepPrice({
+  draft,
+  patch,
+  errors,
+  onSuggest,
+  suggesting,
+  suggestedByAi,
+}: StepProps & { onSuggest?: () => void; suggesting?: boolean; suggestedByAi?: boolean }) {
   const price = Number(draft.price_fcfa.replace(/\s/g, ''))
   return (
     <>
@@ -602,6 +626,17 @@ export function StepPrice({ draft, patch, errors }: StepProps) {
         value={draft.description}
         onChange={(e) => patch({ description: e.target.value })}
       />
+      {onSuggest && (
+        <div className={styles.suggest}>
+          <Button variant="secondary" onClick={onSuggest} disabled={suggesting}>
+            {suggesting ? 'Rédaction…' : 'Rédiger la description à ma place'}
+          </Button>
+          <p className={styles.hint}>
+            Le texte n’utilise que les informations déjà saisies. Relisez-le avant de continuer.
+          </p>
+          {suggestedByAi && <p className={styles.hint}>{AUTO_NOTICE}</p>}
+        </div>
+      )}
     </>
   )
 }
