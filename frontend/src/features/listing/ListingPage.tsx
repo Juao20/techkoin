@@ -14,6 +14,8 @@ import { ApiError, api } from '@/lib/api'
 import { formatFCFA } from '@/lib/format'
 import { timeAgo, toCard } from '@/lib/listings'
 import type { ListingCardApi, ListingDetailApi } from '@/lib/types'
+import { AssistantPanel } from './AssistantPanel'
+import { CompareSuggestions } from './CompareSuggestions'
 import { MarketInsight } from './MarketInsight'
 import { ReportDialog } from './ReportDialog'
 import { buildSpecGroups } from './specs'
@@ -214,6 +216,9 @@ export default function ListingPage() {
       )}
 
       <MarketInsight listing={l} />
+
+      {!sold && <AssistantPanel listing={l} />}
+      {!sold && <CompareSuggestions listing={l} />}
 
       <section className={styles.block}>
         <h2>Caractéristiques</h2>
