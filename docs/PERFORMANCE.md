@@ -4,9 +4,9 @@ Mesures Lighthouse 12, profil mobile par défaut (écran 412 px, CPU ralenti 4x,
 
 | Page | Performance | Accessibilité | Bonnes pratiques | SEO | LCP | CLS |
 |---|---|---|---|---|---|---|
-| accueil | 97 | 100 | 100 | 100 | 2.1Â s | 0 |
-| resultats | 92 | 100 | 100 | 100 | 3.0Â s | 0.003 |
-| fiche | 96 | 100 | 100 | 100 | 2.6Â s | 0 |
+| accueil | 97 | 100 | 100 | 100 | 2.1 s | 0 |
+| resultats | 92 | 100 | 100 | 100 | 3.0 s | 0.003 |
+| fiche | 96 | 100 | 100 | 100 | 2.6 s | 0 |
 
 Ce qui a été corrigé pour y arriver : les premières photos d'une page se chargent tout de suite (les autres restent différées), le pied de page ne bouge plus quand le contenu arrive, les liens et menus réduits à une icône ont un nom accessible, la liste de résultats a un titre de niveau 2, et `robots.txt` existe.
 
