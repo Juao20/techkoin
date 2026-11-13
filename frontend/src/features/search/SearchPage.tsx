@@ -9,6 +9,7 @@ import { api } from '@/lib/api'
 import { toCard } from '@/lib/listings'
 import type { ListingCardApi, Page } from '@/lib/types'
 import { FilterPanel } from './FilterPanel'
+import { SmartSearch } from './SmartSearch'
 import {
   SORTS,
   parseFilters,
@@ -57,6 +58,17 @@ export default function SearchPage() {
       </aside>
 
       <section aria-labelledby="results-title" className={styles.results}>
+        <SmartSearch
+          initialQuery={params.get('ia') ?? ''}
+          autoRun={Boolean(params.get('ia'))}
+          onApply={(filters) => setParams(new URLSearchParams(filters), { replace: true })}
+          onRemove={(keys) => {
+            const next = new URLSearchParams(params)
+            keys.forEach((k) => next.delete(k))
+            next.delete('page')
+            setParams(next, { replace: true })
+          }}
+        />
         <div className={styles.toolbar}>
           <div>
             <h1 id="results-title" className={styles.title}>
