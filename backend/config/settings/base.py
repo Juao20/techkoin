@@ -24,6 +24,8 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 SITE_URL = os.environ.get("SITE_URL", "http://localhost:5173")
+# Built front end (`npm run build` in frontend/), served by `config.spa.spa_with_meta`.
+FRONTEND_DIST = os.environ.get("FRONTEND_DIST", str(BASE_DIR.parent / "frontend" / "dist"))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
